@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Boleto — Cine Rommina</title>
+<style>
+  @page { margin: 0; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0a0505; font-family: Georgia, serif;
+  }
+  .ticket {
+    position: relative; width: 720px; display: flex; overflow: hidden;
+    background: linear-gradient(135deg, #f7efdd, #e7d8b8);
+    border-radius: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  .main { flex: 1; padding: 40px 36px; border-right: 3px dashed #8b0000; }
+  .stub {
+    width: 230px; padding: 28px 20px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; text-align: center;
+  }
+  .notch {
+    position: absolute; width: 34px; height: 34px; border-radius: 50%;
+    background: #0a0505; left: calc(100% - 230px - 20px);
+  }
+  .notch.top { top: -17px; } .notch.bottom { bottom: -17px; }
+  .kicker { font-size: 11px; letter-spacing: 5px; color: #8b0000; }
+  h1 { margin: 10px 0 4px; font-size: 34px; color: #4a0404; }
+  .sub { font-style: italic; color: #6b4c2a; margin: 0 0 22px; }
+  .row { display: flex; gap: 26px; margin-top: 16px; }
+  .field .k { font-size: 10px; letter-spacing: 3px; color: #8b0000; }
+  .field .v { font-size: 15px; color: #2b1d14; margin-top: 3px; }
+  img { width: 170px; height: 170px; border: 4px solid #4a0404; border-radius: 10px; }
+  .scan { font-size: 11px; letter-spacing: 2px; color: #8b0000; }
+  .hearts { font-size: 18px; }
+</style>
+</head>
+<body>
+  <div class="ticket">
+    <div class="main">
+      <div class="kicker">★ CINE ROMMINA · FUNCIÓN PRIVADA ★</div>
+      <h1>Una historia de amor</h1>
+      <p class="sub">Se admite exactamente una espectadora (y sus gatos)</p>
+      <div class="row">
+        <div class="field"><div class="k">FILA</div><div class="v">Mi corazón</div></div>
+        <div class="field"><div class="k">BUTACA</div><div class="v">Única</div></div>
+        <div class="field"><div class="k">FECHA</div><div class="v">Hoy y siempre</div></div>
+        <div class="field"><div class="k">PRECIO</div><div class="v">Una sonrisa</div></div>
+      </div>
+    </div>
+    <div class="stub">
+      <img src="data:image/png;base64,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" alt="QR de la función">
+      <div class="scan">ESCANÉAME 🎬</div>
+      <div class="hearts">❤️ 🐱 ❤️</div>
+    </div>
+    <div class="notch top"></div>
+    <div class="notch bottom"></div>
+  </div>
+</body>
+</html>
