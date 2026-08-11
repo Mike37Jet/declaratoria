@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import confetti from 'canvas-confetti'
 import TimeCounter from './TimeCounter'
 import Credits from './Credits'
-import { PixelCat } from './PixelCat'
+import { CAT_COLORS, PixelCat } from './PixelCat'
 import { HER_NAME } from '../config'
 
 type Props = {
@@ -74,15 +74,20 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
         </p>
       </motion.div>
 
-      {/* Gatitos celebrando */}
-      <div aria-hidden className="flex items-end gap-6">
-        {[0, 1, 2].map((i) => (
+      {/* La pandilla de gatitos celebrando */}
+      <div aria-hidden className="flex items-end gap-5">
+        {[
+          { color: CAT_COLORS.negro, size: 32 },
+          { color: CAT_COLORS.amarillo, size: 38 },
+          { color: CAT_COLORS.rojo, size: 46 },
+          { color: CAT_COLORS.blanca, size: 28 },
+        ].map((cat, i) => (
           <motion.div
-            key={i}
+            key={cat.color}
             animate={{ y: [0, -12, 0] }}
             transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.18 }}
           >
-            <PixelCat size={i === 1 ? 44 : 34} color={i === 1 ? '#8b0000' : '#1a1114'} />
+            <PixelCat size={cat.size} color={cat.color} />
           </motion.div>
         ))}
       </div>
