@@ -15,7 +15,7 @@ npm run dev
 
 | Qué | Dónde |
 |---|---|
-| Nombres, URL final y fecha oficial del "sí" | [src/config.ts](src/config.ts) |
+| Nombres, apodos, URL final y fecha oficial del "sí" | [src/config.ts](src/config.ts) |
 | El texto de la carta (array `SCENES`) | [src/components/LoveLetter.tsx](src/components/LoveLetter.tsx) |
 | Fotos del carrusel y sus pies de foto | Archivos en `public/photos/` + array `PHOTOS` en [src/config.ts](src/config.ts) |
 | Créditos finales | [src/components/Credits.tsx](src/components/Credits.tsx) |
@@ -23,6 +23,11 @@ npm run dev
 **Fotos:** reemplaza `public/photos/foto1.svg` … `foto6.svg` por tus fotos
 reales (jpg/png/webp) y actualiza los nombres en `PHOTOS` dentro de
 `src/config.ts`. Puedes poner más o menos de 6.
+
+**La foto IMAX:** la que tenga `imax: true` en `PHOTOS` se proyecta en la
+proporción 1.43:1 del IMAX — el fotograma crece de alto y se enmarca en
+dorado, igual que en el cine cuando la película pasa a formato IMAX.
+Marca solo una y elige la que mejor luzca en vertical.
 
 **Contador:** la primera vez que ella presione "Sí", la fecha queda guardada en
 su navegador y el contador arranca. Después del gran día, fija

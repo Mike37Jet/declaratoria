@@ -13,11 +13,16 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import QRCode from 'qrcode'
 
 const config = await readFile(new URL('../src/config.ts', import.meta.url), 'utf8')
-const url = config.match(/SITE_URL\s*=\s*'([^']+)'/)?.[1]
+const read = (name) => config.match(new RegExp(`${name}\\s*=\\s*'([^']+)'`))?.[1]
+
+const url = read('SITE_URL')
 if (!url) {
   console.error('No encontré SITE_URL en src/config.ts')
   process.exit(1)
 }
+const herName = read('HER_NAME') ?? ''
+const herNickname = read('HER_NICKNAME') ?? herName
+const yourNickname = read('YOUR_NICKNAME') ?? ''
 
 await mkdir(new URL('../qr', import.meta.url), { recursive: true })
 
@@ -75,12 +80,17 @@ const ticket = `<!doctype html>
 <body>
   <div class="ticket">
     <div class="main">
-      <div class="kicker">★ CINE ROMMINA · FUNCIÓN PRIVADA ★</div>
+      <div class="kicker">★ CINE ${herName.toUpperCase()} · FUNCIÓN PRIVADA EN IMAX ★</div>
       <h1>Una historia de amor</h1>
-      <p class="sub">Se admite exactamente una espectadora (y sus gatos)</p>
+      <p class="sub">Protagonizada por ${herNickname} &amp; ${yourNickname}</p>
       <div class="row">
+        <div class="field"><div class="k">A NOMBRE DE</div><div class="v">${herNickname}</div></div>
+        <div class="field"><div class="k">SALA</div><div class="v">IMAX 1</div></div>
         <div class="field"><div class="k">FILA</div><div class="v">Mi corazón</div></div>
         <div class="field"><div class="k">BUTACA</div><div class="v">Única</div></div>
+      </div>
+      <div class="row">
+        <div class="field"><div class="k">FORMATO</div><div class="v">IMAX 70mm · 1.43:1</div></div>
         <div class="field"><div class="k">FECHA</div><div class="v">Hoy y siempre</div></div>
         <div class="field"><div class="k">PRECIO</div><div class="v">Una sonrisa</div></div>
       </div>

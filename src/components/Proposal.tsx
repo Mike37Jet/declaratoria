@@ -46,7 +46,7 @@ export default function Proposal({ onYes }: Props) {
         transition={{ delay: 0.3 }}
         className="font-pixel text-[9px] tracking-widest text-(--color-gold)"
       >
-        ★ ESCENA FINAL · SIN SEGUNDA TOMA ★
+        ★ ESCENA FINAL · IMAX · SIN SEGUNDA TOMA ★
       </motion.p>
 
       <motion.h2

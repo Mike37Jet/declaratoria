@@ -1,4 +1,4 @@
-import { NOTIFY_TOPIC } from './config'
+import { HER_NICKNAME, NOTIFY_TOPIC } from './config'
 
 /** Fecha en hora local de su celular, lista para pegar en OFFICIAL_YES_DATE. */
 function localIso(d: Date) {
@@ -23,7 +23,7 @@ export function notifyYes(isFirstYes: boolean, when: Date) {
     ? {
         topic: NOTIFY_TOPIC,
         title: '🎬❤️ ¡¡DIJO QUE SÍ!! ❤️🎬',
-        message: `¡Rommina presionó "Sí" por PRIMERA vez!\n\n📅 ${legible}\n\nPara dejarlo tallado en piedra, en src/config.ts pon:\nOFFICIAL_YES_DATE = '${localIso(when)}'`,
+        message: `¡${HER_NICKNAME} presionó "Sí" por PRIMERA vez!\n\n📅 ${legible}\n\nPara dejarlo tallado en piedra, en src/config.ts pon:\nOFFICIAL_YES_DATE = '${localIso(when)}'`,
         priority: 5,
         tags: ['tada', 'heart', 'cat'],
       }

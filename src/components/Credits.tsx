@@ -1,8 +1,8 @@
-import { HER_NAME, YOUR_NAME } from '../config'
+import { HER_NAME, HER_NICKNAME, YOUR_NAME, YOUR_NICKNAME } from '../config'
 
 const CREDITS: { role: string; name: string }[] = [
-  { role: 'Protagonista', name: HER_NAME },
-  { role: 'Coprotagonista (y muy afortunado)', name: YOUR_NAME },
+  { role: 'Protagonista', name: `${HER_NAME} «${HER_NICKNAME}»` },
+  { role: 'Coprotagonista (y muy afortunado)', name: `${YOUR_NAME} «${YOUR_NICKNAME}»` },
   { role: 'Dirección', name: 'El destino' },
   { role: 'Guion', name: 'Un corazón muy nervioso' },
   { role: 'Fotografía', name: 'Tus ojos' },
@@ -10,6 +10,7 @@ const CREDITS: { role: string; name: string }[] = [
   { role: 'Efectos especiales', name: 'Tu sonrisa' },
   { role: 'Vestuario', name: 'Pelos de gato (inevitable)' },
   { role: 'Género', name: 'Romance / Comedia / Aventura' },
+  { role: 'Formato', name: 'IMAX 70mm — no cabía en otra pantalla' },
   { role: 'Clasificación', name: 'Apta para enamorados' },
   { role: 'Duración', name: 'Toda la vida' },
 ]

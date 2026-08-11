@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti'
 import TimeCounter from './TimeCounter'
 import Credits from './Credits'
 import { PixelCat, PixelPenguin, PixelSeal } from './PixelCat'
-import { HER_NAME } from '../config'
+import { HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = {
   yesDate: Date
@@ -61,7 +61,7 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
         className="text-center"
       >
         <p className="font-pixel mb-4 text-[9px] tracking-widest text-(--color-gold)">
-          ★ ESTRENO MUNDIAL ★
+          ★ ESTRENO MUNDIAL EN IMAX ★
         </p>
         <h2
           className="font-marquee text-4xl text-(--color-gold-light) sm:text-6xl"
@@ -70,7 +70,7 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
           ¡Dijo que sí!
         </h2>
         <p className="mt-4 text-base italic opacity-75 sm:text-lg">
-          {HER_NAME} y yo — ahora oficialmente en cartelera
+          {HER_NICKNAME} &amp; {YOUR_NICKNAME} — ahora oficialmente en cartelera
         </p>
       </motion.div>
 

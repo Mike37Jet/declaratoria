@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { HER_NAME } from '../config'
+import { HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onStart: () => void }
 
@@ -66,7 +66,29 @@ export default function Marquee({ onStart }: Props) {
           de amor
         </h1>
 
-        <p className="mt-5 text-xs tracking-[0.3em] uppercase opacity-60 sm:text-sm">
+        <p className="mt-4 text-xs tracking-[0.2em] uppercase opacity-70 sm:text-sm">
+          Protagonizada por
+          <br />
+          <span className="text-(--color-gold)">
+            {HER_NICKNAME} &amp; {YOUR_NICKNAME}
+          </span>
+        </p>
+
+        {/* Sello de formato */}
+        <div className="mt-5 flex justify-center">
+          <span
+            className="font-pixel rounded-sm border px-3 py-2 text-[7px] tracking-[0.25em] sm:text-[8px]"
+            style={{
+              borderColor: 'var(--color-gold)',
+              color: 'var(--color-gold)',
+              background: 'rgba(212, 175, 55, 0.08)',
+            }}
+          >
+            PROYECTADA EN IMAX 70mm
+          </span>
+        </div>
+
+        <p className="mt-4 text-xs tracking-[0.3em] uppercase opacity-60 sm:text-sm">
           Función privada · Una sola butaca
         </p>
 

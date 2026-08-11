@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { CAT_COLORS, PixelCat } from './PixelCat'
-import { HER_NAME, YOUR_NAME } from '../config'
+import { HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onDone: () => void }
 
@@ -15,7 +15,7 @@ const SCENES: { heading: string; lines: string[] }[] = [
   {
     heading: `ESCENA 1 — INT. UN DÍA CUALQUIERA — DE PRONTO`,
     lines: [
-      `${HER_NAME}:`,
+      `${HER_NICKNAME}:`,
       `Dicen que las mejores películas no se anuncian: simplemente empiezan. Así llegaste tú — sin tráiler, sin aviso — y de repente mi historia tenía protagonista.`,
     ],
   },
@@ -26,7 +26,14 @@ const SCENES: { heading: string; lines: string[] }[] = [
     ],
   },
   {
-    heading: `ESCENA 3 — INT. MI CORAZÓN — DÍA Y NOCHE`,
+    heading: `ESCENA 3 — INT. SALA IMAX — LUCES APAGADAS`,
+    lines: [
+      `Y creo que por fin entendí por qué amas el IMAX: hay historias que en una pantalla común simplemente no caben. Necesitan que la imagen crezca de piso a techo, que el sonido se sienta en el pecho, que uno se olvide de que la pantalla tiene bordes.`,
+      `Lo que siento por ti es exactamente eso. No cabe en formato normal. Es de las que hay que ver en la pantalla más grande que exista — y aun así se sale del cuadro.`,
+    ],
+  },
+  {
+    heading: `ESCENA 4 — INT. MI CORAZÓN — DÍA Y NOCHE`,
     lines: [
       `He repetido esta escena en mi cabeza más veces que mi película favorita. La he editado, le he cambiado la música, he ensayado el diálogo... y siempre termina igual: contigo sonriendo.`,
       `Porque contigo no quiero un cortometraje. Quiero la saga completa, las escenas post-créditos, el detrás de cámaras y todas las secuelas.`,
@@ -40,7 +47,7 @@ const SCENES: { heading: string; lines: string[] }[] = [
   },
 ]
 
-const SIGNATURE = `— ${YOUR_NAME}, tu director y tu fan número uno`
+const SIGNATURE = `— ${YOUR_NICKNAME}, tu director y tu fan número uno`
 
 /** Velocidad de tipeo (ms por caracter). */
 const TYPE_MS = 28
@@ -107,7 +114,7 @@ export default function LoveLetter({ onDone }: Props) {
         />
 
         <p className="font-pixel mb-8 text-center text-[8px] tracking-widest text-(--color-velvet) sm:text-[10px]">
-          ★ GUION ORIGINAL · ROMANCE · +18 GATOS ★
+          ★ GUION ORIGINAL · ROMANCE · IMAX 70mm ★
         </p>
 
         {SCENES.slice(0, sceneIdx + 1).map((scene, i) => {

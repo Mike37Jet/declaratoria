@@ -68,11 +68,16 @@ export default function FilmStripCarousel({ onDone }: Props) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="flex items-center gap-3 px-4 text-center">
-        <Clapperboard className="text-(--color-gold)" size={28} aria-hidden />
-        <h2 className="font-marquee text-2xl text-(--color-gold-light) sm:text-3xl">
-          Detrás de cámaras
-        </h2>
+      <div className="px-4 text-center">
+        <div className="flex items-center justify-center gap-3">
+          <Clapperboard className="text-(--color-gold)" size={28} aria-hidden />
+          <h2 className="font-marquee text-2xl text-(--color-gold-light) sm:text-3xl">
+            Detrás de cámaras
+          </h2>
+        </div>
+        <p className="font-pixel mt-3 text-[7px] tracking-[0.2em] opacity-50 sm:text-[8px]">
+          RODADO EN CÁMARAS IMAX
+        </p>
       </div>
 
       {/* Tira de película */}
@@ -81,7 +86,7 @@ export default function FilmStripCarousel({ onDone }: Props) {
         <div
           ref={trackRef}
           onScroll={onScroll}
-          className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[12vw] py-4"
+          className="flex snap-x snap-mandatory items-center gap-4 overflow-x-auto px-[12vw] py-4"
           style={{ scrollbarWidth: 'none' }}
         >
           {PHOTOS.map((photo, i) => (
@@ -89,9 +94,20 @@ export default function FilmStripCarousel({ onDone }: Props) {
               key={photo.file}
               className="w-[76vw] max-w-sm shrink-0 snap-center"
             >
+              {/* La foto marcada como IMAX se proyecta más alta: la pantalla se expande */}
+              {photo.imax && (
+                <p className="font-pixel mb-2 text-center text-[7px] tracking-[0.2em] text-(--color-gold) sm:text-[8px]">
+                  ▲ LA PANTALLA SE EXPANDE ▲
+                </p>
+              )}
               <div
-                className="aspect-4/3 overflow-hidden border-4"
-                style={{ borderColor: '#151210', background: '#000' }}
+                className="overflow-hidden border-4 transition-all duration-700"
+                style={{
+                  aspectRatio: photo.imax ? '1.43 / 1' : '16 / 9',
+                  borderColor: photo.imax ? 'var(--color-gold)' : '#151210',
+                  background: '#000',
+                  boxShadow: photo.imax ? '0 0 30px rgba(212, 175, 55, 0.35)' : undefined,
+                }}
               >
                 <img
                   src={`${import.meta.env.BASE_URL}photos/${photo.file}`}
@@ -104,9 +120,9 @@ export default function FilmStripCarousel({ onDone }: Props) {
               <figcaption className="font-pixel mt-3 text-center text-[8px] leading-relaxed text-(--color-cream) opacity-80 sm:text-[9px]">
                 {photo.caption}
               </figcaption>
-              {/* Número de fotograma */}
+              {/* Número de fotograma y formato */}
               <p aria-hidden className="mt-1 text-center text-[10px] tracking-widest text-(--color-gold) opacity-50">
-                {String(i + 1).padStart(2, '0')}A
+                {String(i + 1).padStart(2, '0')}A {photo.imax ? '· IMAX 1.43:1' : ''}
               </p>
             </figure>
           ))}

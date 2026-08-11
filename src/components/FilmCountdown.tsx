@@ -26,6 +26,14 @@ export default function FilmCountdown({ onDone }: Props) {
       exit={{ opacity: 0 }}
     >
       <div className="relative flex size-72 items-center justify-center sm:size-96">
+        {/* Sello de formato */}
+        <p
+          aria-hidden
+          className="font-pixel absolute -bottom-10 left-1/2 -translate-x-1/2 text-[7px] tracking-[0.3em] whitespace-nowrap text-(--color-cream) opacity-40 sm:text-[8px]"
+        >
+          IMAX 70mm · 1.43:1
+        </p>
+
         {/* Cruz de encuadre */}
         <div aria-hidden className="absolute inset-0">
           <div className="absolute top-1/2 right-0 left-0 h-px bg-(--color-cream) opacity-30" />
