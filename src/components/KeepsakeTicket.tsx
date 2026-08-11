@@ -7,8 +7,15 @@ type Props = { yesDate: Date }
 /** La butaca que eligió en la taquilla. Debe coincidir con BoxOffice. */
 const SEAT_LABEL = 'C4'
 
-/** Arte del boleto: recorte vertical de la foto IMAX, en proporción de póster. */
-const POSTER_SRC = `${import.meta.env.BASE_URL}photos/poster-boleto.jpg`
+/**
+ * Arte del boleto: recorte vertical de la foto IMAX, en proporción de póster.
+ *
+ * Se prueban las dos extensiones porque al cambiar la foto es fácil dejarla
+ * como .png; si solo se buscara el .jpg, el boleto saldría en negro sin avisar.
+ */
+const POSTER_SOURCES = ['jpg', 'png'].map(
+  (ext) => `${import.meta.env.BASE_URL}photos/poster-boleto.${ext}`,
+)
 
 /**
  * Ancho fijo del boleto en pantalla. Las muescas del troquelado se calculan
@@ -163,6 +170,66 @@ function drawFog(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
+/**
+ * Grano de película. Se genera una baldosa de ruido una sola vez y se repite,
+ * así el boleto de pantalla y la imagen descargable llevan el mismo grano.
+ *
+ * Son motas blancas y negras sobre transparente, a partes iguales, y se pintan
+ * en mezcla normal. Con `overlay` el grano desaparecía en las zonas oscuras
+ * —que aquí son casi todo el boleto— porque ese modo modula según el fondo.
+ */
+const GRAIN_TILE = 128
+/** Sube esto si quieres más grano; a partir de 0.2 ya ensucia la foto. */
+const GRAIN_ALPHA = 0.12
+
+let grainCanvas: HTMLCanvasElement | null = null
+function grainTile() {
+  if (grainCanvas) return grainCanvas
+  const c = document.createElement('canvas')
+  c.width = GRAIN_TILE
+  c.height = GRAIN_TILE
+  const g = c.getContext('2d')
+  if (g) {
+    const noise = g.createImageData(GRAIN_TILE, GRAIN_TILE)
+    for (let i = 0; i < noise.data.length; i += 4) {
+      const n = Math.random() - 0.5
+      const v = n > 0 ? 255 : 0
+      noise.data[i] = v
+      noise.data[i + 1] = v
+      noise.data[i + 2] = v
+      // Igual de probable aclarar que oscurecer: el brillo medio no cambia.
+      noise.data[i + 3] = Math.abs(n) * 2 * 255
+    }
+    g.putImageData(noise, 0, 0)
+  }
+  grainCanvas = c
+  return c
+}
+
+let grainUrl: string | null = null
+function grainDataUrl() {
+  if (!grainUrl) grainUrl = grainTile().toDataURL()
+  return grainUrl
+}
+
+/** El mismo grano en el canvas, a la escala que le toca según el ancho. */
+function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const pattern = ctx.createPattern(grainTile(), 'repeat')
+  if (!pattern) return
+  // El canvas es más grande que el boleto de pantalla: se escala la baldosa
+  // para que el grano se vea del mismo tamaño en los dos.
+  const scale = w / TICKET_W
+  pattern.setTransform(new DOMMatrix([scale, 0, 0, scale, 0, 0]))
+  ctx.save()
+  // Sin esto el navegador interpola la baldosa al ampliarla y se lleva por
+  // delante el grano: las motas se promedian y no queda casi nada.
+  ctx.imageSmoothingEnabled = false
+  ctx.globalAlpha = GRAIN_ALPHA
+  ctx.fillStyle = pattern
+  ctx.fillRect(0, 0, w, h)
+  ctx.restore()
+}
+
 /** Dibuja una imagen recortada tipo `object-fit: cover`. */
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
   const scale = Math.max(w / img.width, h / img.height)
@@ -178,6 +245,16 @@ function loadImage(src: string) {
     img.onerror = reject
     img.src = src
   })
+}
+
+/** Carga la primera de las fuentes que exista. */
+async function loadPoster() {
+  for (const src of POSTER_SOURCES) {
+    const img = await loadImage(src).catch(() => null)
+    if (img) return img
+  }
+  console.warn('No encontré el arte del boleto en', POSTER_SOURCES)
+  return null
 }
 
 /** Texto centrado con espaciado entre letras, que el canvas no trae de fábrica. */
@@ -198,7 +275,7 @@ function tracked(ctx: CanvasRenderingContext2D, text: string, cx: number, y: num
 async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   // Sin esto el canvas dibujaría con la tipografía de reserva.
   await document.fonts.ready
-  const photo = await loadImage(POSTER_SRC).catch(() => null)
+  const photo = await loadPoster()
 
   const W = 900
   const H = 1350
@@ -228,8 +305,9 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   ctx.fillStyle = bottom
   ctx.fillRect(0, 620, W, H - 620)
 
-  // La niebla va sobre el velo y bajo el texto.
+  // La niebla y el grano van sobre el velo y bajo el texto.
   drawFog(ctx, W, H)
+  drawGrain(ctx, W, H)
 
   ctx.textAlign = 'start'
   ctx.textBaseline = 'alphabetic'
@@ -313,6 +391,8 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
  */
 export default function KeepsakeTicket({ yesDate }: Props) {
   const [saving, setSaving] = useState(false)
+  // Si el arte no está en .jpg, se pasa a la siguiente extensión.
+  const [posterIndex, setPosterIndex] = useState(0)
   const linkRef = useRef<HTMLAnchorElement>(null)
 
   /**
@@ -367,10 +447,11 @@ export default function KeepsakeTicket({ yesDate }: Props) {
 
         {/* La foto llena el boleto */}
         <img
-          src={POSTER_SRC}
+          src={POSTER_SOURCES[posterIndex]}
           alt={`${HER_NICKNAME} y ${YOUR_NICKNAME}`}
           className="absolute inset-0 size-full object-cover"
           draggable={false}
+          onError={() => setPosterIndex((i) => Math.min(i + 1, POSTER_SOURCES.length - 1))}
         />
 
         {/* Velo superior */}
@@ -419,6 +500,17 @@ export default function KeepsakeTicket({ yesDate }: Props) {
 
         {/* Niebla en la transición: va sobre los velos y bajo el texto */}
         <div aria-hidden className="absolute inset-0" style={{ backgroundImage: fogCss }} />
+
+        {/* Grano de película, también bajo el texto para que no lo ensucie */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${grainDataUrl()})`,
+            backgroundRepeat: 'repeat',
+            opacity: GRAIN_ALPHA,
+          }}
+        />
 
         {/* Título y pie, abajo */}
         <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-8 text-center">
