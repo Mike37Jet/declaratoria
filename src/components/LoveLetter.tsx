@@ -147,7 +147,7 @@ export default function LoveLetter({ onDone }: Props) {
           >
             <p className="font-letter text-lg italic opacity-80 sm:text-xl">{SIGNATURE}</p>
             <div className="mt-3 flex justify-center gap-2 text-(--color-velvet)">
-              ❤ <PixelCat size={20} color="#8b0000" /> ❤
+              ❤ <PixelCat size={20} /> ❤
             </div>
           </motion.div>
         )}
