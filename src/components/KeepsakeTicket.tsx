@@ -280,21 +280,17 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   ctx.font = `800 28px ${SANS}`
   tracked(ctx, `SÓLO PARA ${HER_NICKNAME.toUpperCase()}`, cx, 1130, 7)
 
-  ctx.fillStyle = 'rgba(255,255,255,0.8)'
-  ctx.font = `500 14px ${SANS}`
-  tracked(ctx, 'FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX 70mm', cx, 1160, 3)
-
   // Separador y pie con la sala, el momento del sí y la butaca
   ctx.strokeStyle = 'rgba(255,255,255,0.25)'
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(cx - 150, 1184)
-  ctx.lineTo(cx + 150, 1184)
+  ctx.moveTo(cx - 150, 1172)
+  ctx.lineTo(cx + 150, 1172)
   ctx.stroke()
 
   ctx.fillStyle = '#ffffff'
   ctx.font = `800 24px ${SANS}`
-  tracked(ctx, `CINE ${HER_NAME.toUpperCase()}`, cx, 1218, 8)
+  tracked(ctx, `CINE ${HER_NAME.toUpperCase()}`, cx, 1208, 8)
 
   ctx.fillStyle = 'rgba(255,255,255,0.8)'
   ctx.font = `600 15px ${SANS}`
@@ -302,7 +298,7 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
     ctx,
     `${formatDate(yesDate).toUpperCase()}  ·  ${formatTime(yesDate)}  ·  BUTACA ${SEAT_LABEL}`,
     cx,
-    1246,
+    1238,
     2,
   )
 
@@ -446,11 +442,7 @@ export default function KeepsakeTicket({ yesDate }: Props) {
           <p className="mt-1.5 text-[9px] font-extrabold tracking-[0.24em] text-[#e23b45]">
             SÓLO PARA {HER_NICKNAME.toUpperCase()}
           </p>
-          <p className="mt-1.5 text-[5px] font-medium tracking-[0.18em] text-white/80">
-            FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX 70mm
-          </p>
-
-          <div className="mx-auto my-2.5 h-px w-1/2 bg-white/25" />
+          <div className="mx-auto my-3 h-px w-1/2 bg-white/25" />
 
           <p className="text-[8px] font-extrabold tracking-[0.3em] text-white">
             CINE {HER_NAME.toUpperCase()}
