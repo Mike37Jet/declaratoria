@@ -261,7 +261,7 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   // Bloque de título. Nada baja de ~1260: por debajo muerde el troquelado.
   ctx.fillStyle = 'rgba(255,255,255,0.88)'
   ctx.font = `600 17px ${SANS}`
-  tracked(ctx, `UNA PELICULA DE ${YOUR_NICKNAME.toUpperCase()}`, cx, 915, 6)
+  tracked(ctx, `UNA PELÍCULA DE ${YOUR_NICKNAME.toUpperCase()}`, cx, 915, 6)
 
   ctx.fillStyle = '#eef3f8'
   ctx.font = `900 62px ${SANS}`
@@ -278,11 +278,11 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
 
   ctx.fillStyle = '#e23b45'
   ctx.font = `800 28px ${SANS}`
-  tracked(ctx, 'SOLO EN IMAX 70mm', cx, 1130, 7)
+  tracked(ctx, `SÓLO PARA ${HER_NICKNAME.toUpperCase()}`, cx, 1130, 7)
 
   ctx.fillStyle = 'rgba(255,255,255,0.8)'
   ctx.font = `500 14px ${SANS}`
-  tracked(ctx, 'FILMADA EN SU TOTALIDAD CON CAMARAS IMAX', cx, 1160, 3)
+  tracked(ctx, 'FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX 70mm', cx, 1160, 3)
 
   // Separador y pie con la sala, el momento del sí y la butaca
   ctx.strokeStyle = 'rgba(255,255,255,0.25)'
@@ -441,11 +441,13 @@ export default function KeepsakeTicket({ yesDate }: Props) {
           <p className="mt-1.5 text-[6.5px] font-semibold tracking-[0.4em] text-(--color-gold-light)">
             LA DECLARATORIA
           </p>
+          {/* La línea roja no repite IMAX: eso ya lo dicen el wordmark de
+              arriba y el pie de abajo. */}
           <p className="mt-1.5 text-[9px] font-extrabold tracking-[0.24em] text-[#e23b45]">
-            SÓLO EN IMAX 70mm
+            SÓLO PARA {HER_NICKNAME.toUpperCase()}
           </p>
           <p className="mt-1.5 text-[5px] font-medium tracking-[0.18em] text-white/80">
-            FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX
+            FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX 70mm
           </p>
 
           <div className="mx-auto my-2.5 h-px w-1/2 bg-white/25" />
