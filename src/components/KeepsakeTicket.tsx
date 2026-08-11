@@ -122,6 +122,47 @@ function punchScallops(ctx: CanvasRenderingContext2D, w: number, h: number) {
   }
 }
 
+/**
+ * Bancos de niebla en la franja donde la foto se funde con el texto, para que
+ * el título no se apoye sobre un degradado plano.
+ *
+ * Cada uno es un óvalo de borde muy suave. Las posiciones van en tanto por uno
+ * del boleto, así que sirven igual para la pantalla y para el canvas.
+ */
+const FOG = [
+  { x: 0.28, y: 0.667, rx: 0.36, ry: 0.067, a: 0.2 },
+  { x: 0.69, y: 0.689, rx: 0.33, ry: 0.059, a: 0.17 },
+  { x: 0.5, y: 0.644, rx: 0.42, ry: 0.052, a: 0.14 },
+  { x: 0.17, y: 0.711, rx: 0.24, ry: 0.044, a: 0.16 },
+  { x: 0.84, y: 0.652, rx: 0.22, ry: 0.041, a: 0.13 },
+]
+
+/** La niebla en CSS, para el boleto de pantalla. */
+const fogCss = FOG.map(
+  (f) =>
+    `radial-gradient(ellipse ${(f.rx * 200).toFixed(1)}% ${(f.ry * 200).toFixed(1)}% at ${(f.x * 100).toFixed(1)}% ${(f.y * 100).toFixed(1)}%, rgba(226,222,230,${f.a}) 0%, rgba(226,222,230,0) 70%)`,
+).join(', ')
+
+/** La misma niebla en el canvas, para la imagen descargable. */
+function drawFog(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  for (const f of FOG) {
+    const rx = f.rx * w
+    const ry = f.ry * h
+    ctx.save()
+    // Se dibuja un círculo y se aplasta, que es como se hace un óvalo difuso.
+    ctx.translate(f.x * w, f.y * h)
+    ctx.scale(1, ry / rx)
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx)
+    g.addColorStop(0, `rgba(226,222,230,${f.a})`)
+    g.addColorStop(0.7, 'rgba(226,222,230,0)')
+    ctx.fillStyle = g
+    ctx.beginPath()
+    ctx.arc(0, 0, rx, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+}
+
 /** Dibuja una imagen recortada tipo `object-fit: cover`. */
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, w: number, h: number) {
   const scale = Math.max(w / img.width, h / img.height)
@@ -187,6 +228,9 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   ctx.fillStyle = bottom
   ctx.fillRect(0, 620, W, H - 620)
 
+  // La niebla va sobre el velo y bajo el texto.
+  drawFog(ctx, W, H)
+
   ctx.textAlign = 'start'
   ctx.textBaseline = 'alphabetic'
 
@@ -217,35 +261,40 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
   // Bloque de título. Nada baja de ~1260: por debajo muerde el troquelado.
   ctx.fillStyle = 'rgba(255,255,255,0.88)'
   ctx.font = `600 17px ${SANS}`
-  tracked(ctx, `UNA PELICULA DE ${YOUR_NICKNAME.toUpperCase()}`, cx, 920, 6)
+  tracked(ctx, `UNA PELICULA DE ${YOUR_NICKNAME.toUpperCase()}`, cx, 915, 6)
 
   ctx.fillStyle = '#eef3f8'
   ctx.font = `900 62px ${SANS}`
   ctx.shadowColor = 'rgba(0,0,0,0.55)'
   ctx.shadowBlur = 18
-  tracked(ctx, 'UNA HISTORIA', cx, 998, 8)
-  tracked(ctx, 'DE AMOR', cx, 1066, 8)
+  tracked(ctx, 'UNA HISTORIA', cx, 990, 8)
+  tracked(ctx, 'DE AMOR', cx, 1056, 8)
   ctx.shadowBlur = 0
+
+  // Subtitulo, como el nombre de una entrega de la saga
+  ctx.fillStyle = '#f3d580'
+  ctx.font = `600 16px ${SANS}`
+  tracked(ctx, 'LA DECLARATORIA', cx, 1090, 10)
 
   ctx.fillStyle = '#e23b45'
   ctx.font = `800 28px ${SANS}`
-  tracked(ctx, 'SOLO EN IMAX 70mm', cx, 1118, 7)
+  tracked(ctx, 'SOLO EN IMAX 70mm', cx, 1130, 7)
 
   ctx.fillStyle = 'rgba(255,255,255,0.8)'
   ctx.font = `500 14px ${SANS}`
-  tracked(ctx, 'FILMADA EN SU TOTALIDAD CON CAMARAS IMAX', cx, 1150, 3)
+  tracked(ctx, 'FILMADA EN SU TOTALIDAD CON CAMARAS IMAX', cx, 1160, 3)
 
   // Separador y pie con la sala, el momento del sí y la butaca
   ctx.strokeStyle = 'rgba(255,255,255,0.25)'
   ctx.lineWidth = 1
   ctx.beginPath()
-  ctx.moveTo(cx - 150, 1176)
-  ctx.lineTo(cx + 150, 1176)
+  ctx.moveTo(cx - 150, 1184)
+  ctx.lineTo(cx + 150, 1184)
   ctx.stroke()
 
   ctx.fillStyle = '#ffffff'
   ctx.font = `800 24px ${SANS}`
-  tracked(ctx, `CINE ${HER_NAME.toUpperCase()}`, cx, 1212, 8)
+  tracked(ctx, `CINE ${HER_NAME.toUpperCase()}`, cx, 1218, 8)
 
   ctx.fillStyle = 'rgba(255,255,255,0.8)'
   ctx.font = `600 15px ${SANS}`
@@ -253,7 +302,7 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
     ctx,
     `${formatDate(yesDate).toUpperCase()}  ·  ${formatTime(yesDate)}  ·  BUTACA ${SEAT_LABEL}`,
     cx,
-    1242,
+    1246,
     2,
   )
 
@@ -372,6 +421,9 @@ export default function KeepsakeTicket({ yesDate }: Props) {
           </p>
         </div>
 
+        {/* Niebla en la transición: va sobre los velos y bajo el texto */}
+        <div aria-hidden className="absolute inset-0" style={{ backgroundImage: fogCss }} />
+
         {/* Título y pie, abajo */}
         <div className="absolute inset-x-0 bottom-0 z-10 px-3 pb-8 text-center">
           <p className="text-[6px] font-semibold tracking-[0.32em] text-white/90">
@@ -385,14 +437,18 @@ export default function KeepsakeTicket({ yesDate }: Props) {
             <br />
             DE AMOR
           </p>
-          <p className="mt-2 text-[9px] font-extrabold tracking-[0.24em] text-[#e23b45]">
+          {/* Subtítulo, como el nombre de una entrega de la saga */}
+          <p className="mt-1.5 text-[6.5px] font-semibold tracking-[0.4em] text-(--color-gold-light)">
+            LA DECLARATORIA
+          </p>
+          <p className="mt-1.5 text-[9px] font-extrabold tracking-[0.24em] text-[#e23b45]">
             SÓLO EN IMAX 70mm
           </p>
           <p className="mt-1.5 text-[5px] font-medium tracking-[0.18em] text-white/80">
             FILMADA EN SU TOTALIDAD CON CÁMARAS IMAX
           </p>
 
-          <div className="mx-auto my-3 h-px w-1/2 bg-white/25" />
+          <div className="mx-auto my-2.5 h-px w-1/2 bg-white/25" />
 
           <p className="text-[8px] font-extrabold tracking-[0.3em] text-white">
             CINE {HER_NAME.toUpperCase()}

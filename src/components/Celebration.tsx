@@ -101,21 +101,22 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
         className="w-full"
       >
-        <KeepsakeTicket yesDate={yesDate} />
+        <Credits />
       </motion.div>
 
+      {/* El boleto cierra la función, después de los créditos */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.6 }}
         className="w-full"
       >
-        <Credits />
+        <KeepsakeTicket yesDate={yesDate} />
       </motion.div>
 
       <button
