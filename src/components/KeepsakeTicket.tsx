@@ -179,8 +179,8 @@ function drawFog(ctx: CanvasRenderingContext2D, w: number, h: number) {
  * —que aquí son casi todo el boleto— porque ese modo modula según el fondo.
  */
 const GRAIN_TILE = 128
-/** Sube esto si quieres más grano; a partir de 0.2 ya ensucia la foto. */
-const GRAIN_ALPHA = 0.12
+/** Sube esto si quieres más grano; a partir de 0.15 ya ensucia la foto. */
+const GRAIN_ALPHA = 0.06
 
 let grainCanvas: HTMLCanvasElement | null = null
 function grainTile() {
