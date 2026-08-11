@@ -11,6 +11,7 @@ import FilmStripCarousel from './components/FilmStripCarousel'
 import Proposal from './components/Proposal'
 import Celebration from './components/Celebration'
 import { useYesDate } from './hooks/useYesDate'
+import { notifyYes } from './notifyYes'
 
 /** Actos de la función, en orden. */
 type Scene = 'marquee' | 'countdown' | 'letter' | 'carousel' | 'proposal' | 'celebration'
@@ -22,6 +23,7 @@ export default function App() {
   const [justSaidYes, setJustSaidYes] = useState(false)
 
   const handleYes = () => {
+    notifyYes(!yesDate, new Date())
     if (!yesDate) saveYes()
     setJustSaidYes(true)
     setScene('celebration')

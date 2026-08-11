@@ -46,6 +46,21 @@ sea idéntico en todos los dispositivos.
    cada push.
 4. Tu URL será `https://TU_USUARIO.github.io/declaratoria/`.
 
+## Avisos cada vez que presione "Sí" 🔔
+
+Cada "Sí" envía una notificación a un canal secreto de [ntfy.sh](https://ntfy.sh)
+(configurado en `NOTIFY_TOPIC` dentro de `src/config.ts`):
+
+1. Instala la app gratuita **ntfy** (App Store / Play Store).
+2. Suscríbete al tema con el nombre exacto que está en `NOTIFY_TOPIC`.
+3. El **primer "Sí"** llega con prioridad máxima, la fecha exacta y la línea
+   lista para pegar en `OFFICIAL_YES_DATE`. Las repeticiones llegan marcadas
+   como "↻ Repitió la función" (no cambian la fecha original).
+
+También puedes verlo en el navegador: `https://ntfy.sh/<NOTIFY_TOPIC>`
+(ntfy solo guarda ~12 horas de historial en la web; la app sí conserva lo
+que recibe, así que mantén la suscripción activa en tu celular).
+
 ## Generar el código QR y el boleto imprimible
 
 1. Pon la URL real en `SITE_URL` dentro de `src/config.ts`.

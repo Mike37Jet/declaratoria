@@ -32,6 +32,18 @@ export const OFFICIAL_YES_DATE: string | null = null
 export const YES_STORAGE_KEY = 'rommina-dijo-que-si'
 
 /**
+ * 🔔 Canal secreto de ntfy.sh para avisarte cada vez que ella presione "Sí".
+ *
+ * Para recibir los avisos en tu celular:
+ *   1. Instala la app gratuita "ntfy" (App Store / Play Store).
+ *   2. Suscríbete al tema con el nombre exacto de abajo.
+ * También puedes verlo en el navegador: https://ntfy.sh/<tema>
+ *
+ * Déjalo como '' para desactivar los avisos.
+ */
+export const NOTIFY_TOPIC = 'cine-rommina-si-6c6efe241bcb'
+
+/**
  * 📸 Fotos del carrusel. Los archivos viven en public/photos/.
  * Reemplaza los .svg de ejemplo por tus fotos reales (jpg/png/webp),
  * actualiza aquí los nombres de archivo y personaliza cada pie de foto.
