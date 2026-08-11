@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { AnimatePresence } from 'motion/react'
 import GrainOverlay from './components/GrainOverlay'
 import FloatingHearts from './components/FloatingHearts'
-import { WalkingCat } from './components/PixelCat'
 import Marquee from './components/Marquee'
 import Curtains from './components/Curtains'
 import FilmCountdown from './components/FilmCountdown'
@@ -33,7 +32,6 @@ export default function App() {
     <main className="relative min-h-dvh overflow-hidden bg-(--color-cinema)">
       <GrainOverlay />
       {scene !== 'countdown' && <FloatingHearts intensity={scene === 'celebration' ? 0.55 : 0.3} />}
-      {(scene === 'letter' || scene === 'carousel' || scene === 'celebration') && <WalkingCat />}
 
       <AnimatePresence mode="wait">
         {scene === 'marquee' && (

@@ -20,8 +20,6 @@
   --animate-flicker: flicker 4s linear infinite;
   --animate-blink: blink 1.2s step-end infinite;
   --animate-float-up: float-up 8s linear infinite;
-  --animate-cat-walk: cat-walk 22s linear infinite;
-  --animate-cat-step: cat-step 0.5s steps(2) infinite;
 
   @keyframes flicker {
     0%, 100% { opacity: 1; }
@@ -39,17 +37,6 @@
     8% { opacity: var(--heart-opacity, 0.5); }
     92% { opacity: var(--heart-opacity, 0.5); }
     100% { transform: translateY(-10vh) translateX(var(--drift, 20px)) scale(1.15); opacity: 0; }
-  }
-  @keyframes cat-walk {
-    0% { transform: translateX(-80px) scaleX(1); }
-    49.9% { transform: translateX(calc(100vw + 20px)) scaleX(1); }
-    50% { transform: translateX(calc(100vw + 20px)) scaleX(-1); }
-    99.9% { transform: translateX(-80px) scaleX(-1); }
-    100% { transform: translateX(-80px) scaleX(1); }
-  }
-  @keyframes cat-step {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-2px); }
   }
 }
 

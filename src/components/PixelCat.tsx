@@ -130,33 +130,3 @@ export function PixelSeal({ size = 40, ...rest }: SpriteProps) {
     />
   )
 }
-
-/* ── El paseo por el borde inferior ───────────────────── */
-
-/**
- * El gato amarillo, el pingüino y la foca paseando juntos
- * por el borde inferior de la pantalla, de ida y vuelta.
- */
-export function WalkingCat() {
-  const stroll = [
-    { key: 'gato', el: <PixelCat size={32} />, delay: '0s' },
-    { key: 'pinguino', el: <PixelPenguin size={30} />, delay: '-1.4s' },
-    { key: 'foca', el: <PixelSeal size={22} />, delay: '-2.6s' },
-  ]
-  return (
-    <>
-      {stroll.map((pet) => (
-        <div
-          key={pet.key}
-          aria-hidden
-          className="animate-cat-walk pointer-events-none fixed bottom-0 left-0 z-30"
-          style={{ animationDelay: pet.delay }}
-        >
-          <div className="animate-cat-step" style={{ animationDelay: pet.delay }}>
-            {pet.el}
-          </div>
-        </div>
-      ))}
-    </>
-  )
-}
