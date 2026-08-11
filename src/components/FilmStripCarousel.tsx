@@ -114,6 +114,7 @@ export default function FilmStripCarousel({ onDone }: Props) {
                   alt={photo.caption}
                   loading="lazy"
                   className="size-full object-cover transition-transform duration-500 hover:scale-105"
+                  style={{ objectPosition: photo.focus ?? '50% 50%' }}
                   draggable={false}
                 />
               </div>

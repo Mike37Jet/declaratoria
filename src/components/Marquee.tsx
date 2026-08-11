@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { Ticket } from 'lucide-react'
 import { HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onStart: () => void }
@@ -117,8 +118,8 @@ export default function Marquee({ onStart }: Props) {
             boxShadow: '0 6px 24px rgba(139, 0, 0, 0.5)',
           }}
         >
-          <span aria-hidden className="text-xl">🎟️</span>
-          Iniciar función
+          <Ticket aria-hidden size={20} strokeWidth={1.8} />
+          Ir a la taquilla
           {/* Muescas laterales del boleto */}
           <span aria-hidden className="absolute top-1/2 -left-3 size-5 -translate-y-1/2 rounded-full bg-(--color-cinema)" />
           <span aria-hidden className="absolute top-1/2 -right-3 size-5 -translate-y-1/2 rounded-full bg-(--color-cinema)" />

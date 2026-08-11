@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { motion } from 'motion/react'
 import confetti from 'canvas-confetti'
 import TimeCounter from './TimeCounter'
+import KeepsakeTicket from './KeepsakeTicket'
 import Credits from './Credits'
 import { PixelCat, PixelPenguin, PixelSeal } from './PixelCat'
 import { HER_NICKNAME, YOUR_NICKNAME } from '../config'
@@ -100,9 +101,18 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
       </motion.div>
 
       <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2 }}
+        className="w-full"
+      >
+        <KeepsakeTicket yesDate={yesDate} />
+      </motion.div>
+
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.4 }}
+        transition={{ delay: 1.6 }}
         className="w-full"
       >
         <Credits />

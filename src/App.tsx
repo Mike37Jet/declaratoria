@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import GrainOverlay from './components/GrainOverlay'
 import FloatingHearts from './components/FloatingHearts'
 import Marquee from './components/Marquee'
+import BoxOffice from './components/BoxOffice'
 import Curtains from './components/Curtains'
 import FilmCountdown from './components/FilmCountdown'
 import LoveLetter from './components/LoveLetter'
@@ -13,7 +14,14 @@ import { useYesDate } from './hooks/useYesDate'
 import { notifyYes } from './notifyYes'
 
 /** Actos de la función, en orden. */
-type Scene = 'marquee' | 'countdown' | 'letter' | 'carousel' | 'proposal' | 'celebration'
+type Scene =
+  | 'marquee'
+  | 'boxoffice'
+  | 'countdown'
+  | 'letter'
+  | 'carousel'
+  | 'proposal'
+  | 'celebration'
 
 export default function App() {
   const { yesDate, saveYes } = useYesDate()
@@ -35,7 +43,11 @@ export default function App() {
 
       <AnimatePresence mode="wait">
         {scene === 'marquee' && (
-          <Marquee key="marquee" onStart={() => setScene('countdown')} />
+          <Marquee key="marquee" onStart={() => setScene('boxoffice')} />
+        )}
+
+        {scene === 'boxoffice' && (
+          <BoxOffice key="boxoffice" onDone={() => setScene('countdown')} />
         )}
 
         {scene === 'countdown' && (

@@ -56,12 +56,44 @@ export const NOTIFY_TOPIC = 'cine-rommina-si-6c6efe241bcb'
  * proporción 1.43:1 del IMAX, igual que en el cine cuando la película
  * pasa a formato IMAX y la pantalla crece. Marca solo una — funciona
  * mejor con una foto vertical o donde salgan los dos.
+ *
+ * `focus` es el encuadre: como las fotos son verticales y el fotograma
+ * es apaisado, dice qué franja de la foto se ve. '50% 60%' = centrada en
+ * horizontal, un poco hacia abajo en vertical. Súbelo si les corta la
+ * cabeza, bájalo si sobra techo.
  */
-export const PHOTOS: { file: string; caption: string; imax?: boolean }[] = [
-  { file: 'foto1.svg', caption: 'Escena 1 · Donde todo empezó' },
-  { file: 'foto2.svg', caption: 'Escena 2 · Esa sonrisa merece un Óscar' },
-  { file: 'foto3.svg', caption: 'Escena 3 · Toma favorita del director', imax: true },
-  { file: 'foto4.svg', caption: 'Escena 4 · Sin guion, pura improvisación' },
-  { file: 'foto5.svg', caption: 'Escena 5 · La mejor coprotagonista' },
-  { file: 'foto6.svg', caption: 'Escena 6 · Continuará…' },
+export const PHOTOS: {
+  file: string
+  caption: string
+  imax?: boolean
+  focus?: string
+}[] = [
+  {
+    file: '01-playa.jpg',
+    caption: 'Escena 1 · La protagonista entra en cuadro',
+    focus: '50% 30%',
+  },
+  {
+    file: '02-piscina.jpg',
+    caption: 'Escena 2 · Esa sonrisa merece un Óscar',
+    focus: '50% 10%',
+  },
+  {
+    file: '03-oficina.jpg',
+    caption: 'Escena 3 · Sin guion, pura improvisación',
+    // Ya viene recortada a 16:9, así que se ve completa.
+    focus: '50% 50%',
+  },
+  {
+    file: '04-espejo-abrazo.jpg',
+    caption: 'Escena 4 · El espejo nos delató',
+    focus: '50% 62%',
+  },
+  {
+    file: '05-espejo-beso.jpg',
+    caption: 'Escena 5 · Toma favorita del director',
+    imax: true,
+    // Ya viene recortada exactamente a 1.43:1, así que se ve completa.
+    focus: '50% 50%',
+  },
 ]
