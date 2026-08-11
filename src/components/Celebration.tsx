@@ -74,13 +74,11 @@ export default function Celebration({ yesDate, justSaidYes, onReplay }: Props) {
         </p>
       </motion.div>
 
-      {/* La pandilla de gatitos celebrando */}
+      {/* La pareja de gatitos celebrando */}
       <div aria-hidden className="flex items-end gap-5">
         {[
-          { color: CAT_COLORS.negro, size: 32 },
-          { color: CAT_COLORS.amarillo, size: 38 },
-          { color: CAT_COLORS.rojo, size: 46 },
-          { color: CAT_COLORS.blanca, size: 28 },
+          { color: CAT_COLORS.amarillo, size: 42 },
+          { color: CAT_COLORS.blanca, size: 32 },
         ].map((cat, i) => (
           <motion.div
             key={cat.color}

@@ -98,18 +98,12 @@ export default function LoveLetter({ onDone }: Props) {
           boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 0 60px rgba(139, 90, 43, 0.12)',
         }}
       >
-        {/* Gatitos espiando desde las esquinas del papel */}
+        {/* Gatito amarillo espiando desde la esquina del papel */}
         <PixelCat
           size={30}
           color={CAT_COLORS.amarillo}
           className="absolute -top-[26px] right-8"
           style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))' }}
-        />
-        <PixelCat
-          size={24}
-          color={CAT_COLORS.blanca}
-          className="absolute -top-[21px] left-8"
-          style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))', transform: 'scaleX(-1)' }}
         />
 
         <p className="font-pixel mb-8 text-center text-[8px] tracking-widest text-(--color-velvet) sm:text-[10px]">

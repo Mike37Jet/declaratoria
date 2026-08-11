@@ -59,18 +59,17 @@ export const CAT_COLORS = {
 }
 
 /**
- * Desfile de gatitos que caminan por el borde inferior de la pantalla,
- * de ida y vuelta: el negro, el amarillo y la gatita blanca.
+ * El gato amarillo y la gatita blanca paseando juntos por el
+ * borde inferior de la pantalla, de ida y vuelta.
  */
 export function WalkingCat() {
-  const parade = [
-    { color: CAT_COLORS.negro, size: 34, delay: '0s' },
-    { color: CAT_COLORS.amarillo, size: 30, delay: '-1.6s' },
-    { color: CAT_COLORS.blanca, size: 24, delay: '-2.9s' },
+  const pair = [
+    { color: CAT_COLORS.amarillo, size: 32, delay: '0s' },
+    { color: CAT_COLORS.blanca, size: 26, delay: '-1.4s' },
   ]
   return (
     <>
-      {parade.map((cat) => (
+      {pair.map((cat) => (
         <div
           key={cat.color}
           aria-hidden
