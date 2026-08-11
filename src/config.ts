@@ -5,6 +5,15 @@
 /** Nombre de ella, aparece en la marquesina y la gran pregunta. */
 export const HER_NAME = 'Rommi'
 
+/**
+ * La "cadena de cines" que proyecta la función. Sale en la marquesina, en la
+ * taquilla, en los dos boletos y en el boleto imprimible del QR.
+ *
+ * Ojo: el título de la pestaña vive en index.html, que es estático y no puede
+ * leer esto, así que si lo cambias hay que tocarlo también allí.
+ */
+export const CINEMA_NAME = 'ROMMICINES'
+
 /** Tu nombre, aparece en los créditos. */
 export const YOUR_NAME = 'Miguel'
 

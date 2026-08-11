@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { Ticket } from 'lucide-react'
-import { HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
+import { CINEMA_NAME, HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onDone: () => void }
 
@@ -172,7 +172,7 @@ export default function BoxOffice({ onDone }: Props) {
                 }}
               >
                 <p className="font-pixel text-[7px] tracking-[0.25em] opacity-70">
-                  CINE {HER_NAME.toUpperCase()}
+                  {CINEMA_NAME}
                 </p>
                 <p className="font-marquee mt-2 text-xl leading-tight sm:text-2xl">
                   Una historia

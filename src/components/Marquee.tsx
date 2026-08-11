@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { Ticket } from 'lucide-react'
-import { HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
+import { CINEMA_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onStart: () => void }
 
@@ -54,7 +54,7 @@ export default function Marquee({ onStart }: Props) {
         <Bulbs />
 
         <p className="font-pixel mt-6 text-[9px] tracking-widest text-(--color-gold) sm:text-[11px]">
-          CINE {HER_NAME.toUpperCase()}
+          {CINEMA_NAME}
         </p>
         <p className="mt-3 text-sm italic opacity-70">presenta</p>
 

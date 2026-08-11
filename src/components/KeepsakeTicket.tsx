@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Printer, Download } from 'lucide-react'
-import { HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
+import { CINEMA_NAME, HER_NAME, HER_NICKNAME, YOUR_NICKNAME } from '../config'
 
 type Props = { yesDate: Date }
 
@@ -368,7 +368,7 @@ async function renderTicketImage(yesDate: Date): Promise<Blob | null> {
 
   ctx.fillStyle = '#ffffff'
   ctx.font = `800 24px ${SANS}`
-  tracked(ctx, `CINE ${HER_NAME.toUpperCase()}`, cx, 1208, 8)
+  tracked(ctx, CINEMA_NAME, cx, 1208, 8)
 
   ctx.fillStyle = 'rgba(255,255,255,0.8)'
   ctx.font = `600 15px ${SANS}`
@@ -537,7 +537,7 @@ export default function KeepsakeTicket({ yesDate }: Props) {
           <div className="mx-auto my-3 h-px w-1/2 bg-white/25" />
 
           <p className="text-[8px] font-extrabold tracking-[0.3em] text-white">
-            CINE {HER_NAME.toUpperCase()}
+            {CINEMA_NAME}
           </p>
           <p className="mt-1.5 text-[5.5px] font-semibold tracking-[0.12em] text-white/80">
             {formatDate(yesDate).toUpperCase()}

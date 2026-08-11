@@ -4,7 +4,7 @@
  *   node scripts/generate-qr.mjs
  *
  * Salida (en la carpeta qr/):
- *   qr/qr-rommina.png  — el QR solo, alta resolución
+ *   qr/qr-rommi.png  — el QR solo, alta resolución
  *   qr/ticket.html     — boleto de cine listo para imprimir (ábrelo y Cmd+P)
  *
  * La URL se lee de SITE_URL en src/config.ts — cámbiala ahí cuando publiques.
@@ -21,6 +21,7 @@ if (!url) {
   process.exit(1)
 }
 const herName = read('HER_NAME') ?? ''
+const cinemaName = read('CINEMA_NAME') ?? `CINE ${herName.toUpperCase()}`
 const herNickname = read('HER_NICKNAME') ?? herName
 const yourNickname = read('YOUR_NICKNAME') ?? ''
 
@@ -33,7 +34,7 @@ const qrOptions = {
 }
 
 await QRCode.toFile(
-  new URL('../qr/qr-rommina.png', import.meta.url).pathname,
+  new URL('../qr/qr-rommi.png', import.meta.url).pathname,
   url,
   { ...qrOptions, width: 1200 },
 )
@@ -44,7 +45,7 @@ const ticket = `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Boleto — Cine Rommina</title>
+<title>Boleto — ${cinemaName}</title>
 <style>
   @page { margin: 0; }
   body {
@@ -80,7 +81,7 @@ const ticket = `<!doctype html>
 <body>
   <div class="ticket">
     <div class="main">
-      <div class="kicker">★ CINE ${herName.toUpperCase()} · FUNCIÓN PRIVADA EN IMAX ★</div>
+      <div class="kicker">★ ${cinemaName} · FUNCIÓN PRIVADA EN IMAX ★</div>
       <h1>Una historia de amor</h1>
       <p class="sub">Protagonizada por ${herNickname} &amp; ${yourNickname}</p>
       <div class="row">
@@ -109,5 +110,5 @@ const ticket = `<!doctype html>
 await writeFile(new URL('../qr/ticket.html', import.meta.url), ticket)
 
 console.log('✅ QR generado para:', url)
-console.log('   qr/qr-rommina.png  (QR en alta resolución)')
+console.log('   qr/qr-rommi.png  (QR en alta resolución)')
 console.log('   qr/ticket.html     (boleto imprimible — ábrelo y presiona Cmd+P)')
