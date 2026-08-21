@@ -1,7 +1,7 @@
 # 🎬 Para Rommina — Una función de cine privada
 
 Página de declaración con temática cinematográfica: marquesina, telón, cuenta
-regresiva de cinta, carta en formato de guion, carrusel tipo tira de película,
+regresiva de cinta, carta escrita a mano, carrusel tipo tira de película,
 la gran pregunta y un contador en vivo desde el "sí". Con gatitos pixel art. 🐱❤️
 
 ## Desarrollo local
@@ -16,7 +16,7 @@ npm run dev
 | Qué | Dónde |
 |---|---|
 | Nombres, apodos, URL final y fecha oficial del "sí" | [src/config.ts](src/config.ts) |
-| El texto de la carta (array `SCENES`) | [src/components/LoveLetter.tsx](src/components/LoveLetter.tsx) |
+| El texto de la carta (array `PARAGRAPHS`) | [src/components/LoveLetter.tsx](src/components/LoveLetter.tsx) |
 | Fotos del carrusel y sus pies de foto | Archivos en `public/photos/` + array `PHOTOS` en [src/config.ts](src/config.ts) |
 | Créditos finales | [src/components/Credits.tsx](src/components/Credits.tsx) |
 

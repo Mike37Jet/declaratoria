@@ -1,90 +1,70 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { CAT_COLORS, PixelCat } from './PixelCat'
-import { HER_NICKNAME, YOUR_NICKNAME } from '../config'
+import { HER_NAME, YOUR_NAME, YOUR_NICKNAME } from '../config'
 
 type Props = { onDone: () => void }
 
 /**
  * ✍️ LA CARTA — edita aquí el texto.
- * Cada bloque es una "escena" del guion: un encabezado estilo
- * cinematográfico y sus líneas. Escribe con tus propias palabras
- * y anécdotas reales; esto es solo el borrador del guionista.
+ * Es una carta corrida: cada elemento del array es un párrafo y se
+ * tipea completo antes de pasar al siguiente. Un toque adelanta.
  */
-const SCENES: { heading: string; lines: string[] }[] = [
-  {
-    heading: `ESCENA 1 — INT. UN DÍA CUALQUIERA — DE PRONTO`,
-    lines: [
-      `${HER_NICKNAME}:`,
-      `Dicen que las mejores películas no se anuncian: simplemente empiezan. Así llegaste tú — sin tráiler, sin aviso — y de repente mi historia tenía protagonista.`,
-    ],
-  },
-  {
-    heading: `ESCENA 2 — INT. MI CABEZA — TODO EL TIEMPO`,
-    lines: [
-      `Me fijé en los detalles, porque sé que tú te fijas en los detalles: en cómo se te iluminan los ojos cuando hablas de una película que amas, en la ternura con la que miras a un gato como si fuera el único en el mundo, en esa forma tuya de hacer que lo ordinario parezca rodado en 35mm.`,
-    ],
-  },
-  {
-    heading: `ESCENA 3 — INT. SALA IMAX — LUCES APAGADAS`,
-    lines: [
-      `Y creo que por fin entendí por qué amas el IMAX: hay historias que en una pantalla común simplemente no caben. Necesitan que la imagen crezca de piso a techo, que el sonido se sienta en el pecho, que uno se olvide de que la pantalla tiene bordes.`,
-      `Lo que siento por ti es exactamente eso. No cabe en formato normal. Es de las que hay que ver en la pantalla más grande que exista — y aun así se sale del cuadro.`,
-    ],
-  },
-  {
-    heading: `ESCENA 4 — INT. MI CORAZÓN — DÍA Y NOCHE`,
-    lines: [
-      `He repetido esta escena en mi cabeza más veces que mi película favorita. La he editado, le he cambiado la música, he ensayado el diálogo... y siempre termina igual: contigo sonriendo.`,
-      `Porque contigo no quiero un cortometraje. Quiero la saga completa, las escenas post-créditos, el detrás de cámaras y todas las secuelas.`,
-    ],
-  },
-  {
-    heading: `ESCENA FINAL — EXT. NUESTRO FUTURO — AMANECER`,
-    lines: [
-      `Así que aquí va, sin doble de riesgo y sin segunda toma:`,
-    ],
-  },
+const PARAGRAPHS: string[] = [
+  `Hola ${HER_NAME}, la verdad no soy mucho de escribir cartas. A pesar de que suelo expresar mucho y decir cosas muy espontáneas, soy muy malo con las palabras, y aún más cuando son para expresar sentimientos. Así que lo poco que te puedo decir en esta carta es en realidad solo una pequeña parte de lo que siento por ti.`,
+
+  `Para empezar, aún recuerdo la primera vez que te vi en persona: yo llegando a mi entrevista y tú sentada en el escritorio, en una reunión con Dome. Quién iba a pensar que aquella chica terminaría cambiando mi vida en tantos aspectos, y que ahora me costaría imaginar cómo sería mi vida sin ella.`,
+
+  `En esos primeros meses no interactuamos mucho, pero la vida dio un giro que poco a poco nos permitió irnos conociendo. Y fui dándome cuenta de que, además de ser una chica muy linda, tenías una personalidad que me atraía aún más. Tu carisma, tu sonrisa, tu actitud conmigo, fueron capturando mi corazón de a poco. Y sin darme cuenta, ya me estaba enamorando perdidamente de ti.`,
+
+  `Hasta que en un momento decidí ser más directo con mis intenciones, a pesar del temor de que posiblemente no funcionara. Pero tenía la corazonada de que contigo sería diferente. Y me alegra haberme arriesgado, porque me permitió conocer a una chica maravillosa.`,
+
+  `Aunque siento que todavía me falta conocerte más, hay cosas que ya tengo clarísimas: eres serena al tomar decisiones, tierna cuando te sonrojas por algo, divertida cuando te sientes en confianza. Eres empática, cálida y dulce.`,
+
+  `Y quizás no eres de decir mucho lo que sientes, pero lo demuestras: cada abrazo que me das lo haces con tanto gusto que me encanta, cada beso, cada gesto de amor hacia mí. Todo eso hace que me enamore más de ti.`,
+
+  `Estoy dispuesto a seguir descubriéndote y a continuar esta historia a tu lado. Y parece que las palabras se acaban aquí, pero simplemente es el comienzo de algo más.`,
+
+  `Así que me despido por ahora.`,
 ]
 
-const SIGNATURE = `— ${YOUR_NICKNAME}, tu director y tu fan número uno`
+const SIGNATURE = `Con cariño, tu más grande admirador — ${YOUR_NICKNAME} (${YOUR_NAME})`
 
 /** Velocidad de tipeo (ms por caracter). */
 const TYPE_MS = 28
 
 export default function LoveLetter({ onDone }: Props) {
-  const [sceneIdx, setSceneIdx] = useState(0)
+  const [paraIdx, setParaIdx] = useState(0)
   const [chars, setChars] = useState(0)
   const doneRef = useRef<HTMLDivElement>(null)
 
-  const sceneTexts = useMemo(() => SCENES.map((s) => s.lines.join('\n')), [])
-  const finished = sceneIdx >= SCENES.length
+  const finished = paraIdx >= PARAGRAPHS.length
 
   useEffect(() => {
     if (finished) return
-    const total = sceneTexts[sceneIdx].length
+    const total = PARAGRAPHS[paraIdx].length
     if (chars >= total) {
       const t = setTimeout(() => {
-        setSceneIdx((i) => i + 1)
+        setParaIdx((i) => i + 1)
         setChars(0)
       }, 900)
       return () => clearTimeout(t)
     }
     const t = setTimeout(() => setChars((c) => c + 1), TYPE_MS)
     return () => clearTimeout(t)
-  }, [chars, sceneIdx, finished, sceneTexts])
+  }, [chars, paraIdx, finished])
 
   useEffect(() => {
     if (finished) doneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [finished])
 
-  /** Un toque completa la escena actual (para no esperar el tipeo). */
+  /** Un toque completa el párrafo actual (para no esperar el tipeo). */
   const fastForward = () => {
     if (finished) return
-    const total = sceneTexts[sceneIdx].length
+    const total = PARAGRAPHS[paraIdx].length
     if (chars < total) setChars(total)
     else {
-      setSceneIdx((i) => i + 1)
+      setParaIdx((i) => i + 1)
       setChars(0)
     }
   }
@@ -114,33 +94,24 @@ export default function LoveLetter({ onDone }: Props) {
         />
 
         <p className="font-pixel mb-8 text-center text-[8px] tracking-widest text-(--color-velvet) sm:text-[10px]">
-          ★ GUION ORIGINAL · ROMANCE · IMAX 70mm ★
+          ★ CARTA ORIGINAL · ROMANCE ★
         </p>
 
-        {SCENES.slice(0, sceneIdx + 1).map((scene, i) => {
-          if (i > sceneIdx) return null
-          const isCurrent = i === sceneIdx && !finished
-          const text = isCurrent ? sceneTexts[i].slice(0, chars) : sceneTexts[i]
-          const lines = text.split('\n')
+        {PARAGRAPHS.slice(0, paraIdx + 1).map((full, i) => {
+          const isCurrent = i === paraIdx && !finished
+          const text = isCurrent ? full.slice(0, chars) : full
           return (
-            <div key={scene.heading} className="mb-8">
-              <h2 className="font-letter mb-3 text-xs font-bold tracking-[0.18em] uppercase opacity-60 sm:text-sm">
-                {scene.heading}
-              </h2>
-              {lines.map((line, j) => (
-                <p
-                  key={j}
-                  className="font-letter mb-3 text-base leading-relaxed sm:text-lg"
-                >
-                  {line}
-                  {isCurrent && j === lines.length - 1 && (
-                    <span className="animate-blink ml-0.5 inline-block w-2 border-b-2 border-(--color-velvet)">
-                      &nbsp;
-                    </span>
-                  )}
-                </p>
-              ))}
-            </div>
+            <p
+              key={i}
+              className="font-letter mb-5 text-base leading-relaxed sm:text-lg"
+            >
+              {text}
+              {isCurrent && (
+                <span className="animate-blink ml-0.5 inline-block w-2 border-b-2 border-(--color-velvet)">
+                  &nbsp;
+                </span>
+              )}
+            </p>
           )
         })}
 
