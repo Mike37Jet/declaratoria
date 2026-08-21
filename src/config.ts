@@ -88,19 +88,26 @@ export const PHOTOS: {
     focus: '50% 10%',
   },
   {
-    file: '03-oficina.jpg',
-    caption: 'Escena 3 · Sin guion, pura improvisación',
-    // Ya viene recortada a 16:9, así que se ve completa.
+    file: '03-hielo.jpg',
+    caption: 'Escena 3 · Entra el coprotagonista, sobre hielo',
+    // Nativa 16:9, se ve completa.
     focus: '50% 50%',
   },
   {
-    file: '04-espejo-abrazo.jpg',
-    caption: 'Escena 4 · El espejo nos delató',
-    focus: '50% 62%',
+    file: '04-mejillas.jpg',
+    caption: 'Escena 4 · Dos actores, una sola toma',
+    // Nativa 16:9, se ve completa.
+    focus: '50% 50%',
   },
   {
-    file: '05-espejo-beso.jpg',
-    caption: 'Escena 5 · Toma favorita del director',
+    file: '05-beso.jpg',
+    caption: 'Escena 5 · Nadie dijo acción',
+    // Nativa 16:9, se ve completa. El desenfoque es movimiento real, no un fallo.
+    focus: '50% 50%',
+  },
+  {
+    file: '06-espejo-abrazo.jpg',
+    caption: 'Escena 6 · Toma favorita del director',
     imax: true,
     // Ya viene recortada exactamente a 1.43:1, así que se ve completa.
     focus: '50% 50%',

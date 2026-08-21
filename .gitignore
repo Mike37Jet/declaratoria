@@ -25,3 +25,6 @@ dist-ssr
 
 # Fotos originales sin comprimir (no se publican)
 fotos-originales/
+
+# Fotos que salieron del carrusel (se guardan, no se publican)
+fotos-reserva/
