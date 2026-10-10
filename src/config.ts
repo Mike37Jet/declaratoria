@@ -29,17 +29,17 @@ export const YOUR_NICKNAME = 'Roguelito'
 export const SITE_URL = 'https://mike37jet.github.io/declaratoria/'
 
 /**
- * 📅 Fecha oficial del "sí".
+ * 📅 Fecha oficial del "sí" — tallada en piedra.
  *
- * Déjala en null antes del gran día: cuando ella presione "Sí",
- * la fecha se guarda en su dispositivo (localStorage) y el contador
- * arranca desde ese instante.
+ * Mimina presionó "Sí" por PRIMERA vez el viernes 9 de octubre de 2026
+ * a las 17:25:15 (GMT-05:00).
  *
- * Después de que diga que sí, pon aquí la fecha real para que el
- * contador muestre lo mismo en cualquier dispositivo, por ejemplo:
- *   export const OFFICIAL_YES_DATE: string | null = '2026-08-15T21:30:00'
+ * Al estar fijada aquí, gana siempre sobre lo guardado en localStorage:
+ * aunque se borre la caché del celular o se abra en otro dispositivo,
+ * el contador arranca desde este instante. El "-05:00" fija la zona
+ * horaria para que sea el mismo momento en cualquier parte del mundo.
  */
-export const OFFICIAL_YES_DATE: string | null = null
+export const OFFICIAL_YES_DATE: string | null = '2026-10-09T17:25:15-05:00'
 
 /** Clave de localStorage donde se guarda el momento del "sí". */
 export const YES_STORAGE_KEY = 'rommina-dijo-que-si'
