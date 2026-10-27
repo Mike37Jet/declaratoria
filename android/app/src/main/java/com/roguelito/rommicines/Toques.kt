@@ -4,9 +4,12 @@ import android.content.Context
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.SocketTimeoutException
 import java.net.URLEncoder
+import java.net.UnknownHostException
 import java.security.KeyFactory
 import java.security.Signature
 import java.security.spec.PKCS8EncodedKeySpec
@@ -14,6 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import javax.net.ssl.SSLException
 
 /**
  * 💗 Toques: un corazón que uno manda desde su widget y le llega al otro.
@@ -55,31 +59,36 @@ object Toques {
     }
 
     /** El último toque (mandado o recibido), para mostrarlo en el widget. */
-    class Evento(val recibido: Boolean, val nombre: String, val cuando: Long, val fallo: Boolean, val tipo: TipoToque)
+    class Evento(val recibido: Boolean, val nombre: String, val cuando: Long, val fallo: Boolean, val tipo: TipoToque, val motivo: String? = null)
 
     fun ultimo(context: Context): Evento? {
         val p = prefs(context)
         val cuando = p.getLong("ultimo_cuando", 0)
         if (cuando == 0L) return null
         return Evento(p.getBoolean("ultimo_recibido", false), p.getString("ultimo_nombre", "") ?: "", cuando,
-            p.getBoolean("ultimo_fallo", false), TipoToque.desde(p.getString("ultimo_tipo", null)))
+            p.getBoolean("ultimo_fallo", false), TipoToque.desde(p.getString("ultimo_tipo", null)),
+            p.getString("ultimo_motivo", null))
     }
 
-    fun registrar(context: Context, recibido: Boolean, nombre: String, fallo: Boolean = false, tipo: TipoToque = TipoToque.TOQUE) {
+    fun registrar(context: Context, recibido: Boolean, nombre: String, fallo: Boolean = false, tipo: TipoToque = TipoToque.TOQUE, motivo: String? = null) {
         prefs(context).edit()
             .putLong("ultimo_cuando", System.currentTimeMillis())
             .putBoolean("ultimo_recibido", recibido)
             .putString("ultimo_nombre", nombre)
             .putBoolean("ultimo_fallo", fallo)
+            .putString("ultimo_motivo", motivo)
             .putString("ultimo_tipo", tipo.codigo)
             .apply()
     }
 
     fun hora(cuando: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(cuando))
 
-    /** Manda un toque al otro celular. Hace red: no llamar desde el hilo principal. */
-    fun enviar(context: Context, tipo: TipoToque = preferido(context), para: String? = null): Boolean = try {
-        val yo = yo(context) ?: return false
+    /**
+     * Manda un toque al otro celular. Hace red: no llamar desde el hilo principal.
+     * Devuelve null si salió bien, o el motivo del fallo en palabras para mostrarle a quien lo mandó.
+     */
+    fun enviar(context: Context, tipo: TipoToque = preferido(context), para: String? = null): String? = try {
+        val yo = yo(context) ?: return "falta elegir quién usa este celular"
         val mensaje = JSONObject().put(
             "message",
             JSONObject()
@@ -89,12 +98,44 @@ object Toques {
         )
         val llave = llave(context)
         val url = "https://fcm.googleapis.com/v1/projects/${llave.getString("project_id")}/messages:send"
-        val (codigo, respuesta) = post(url, mensaje.toString(), "application/json", tokenDeAcceso(context, llave))
+        // El token se puede pedir de nuevo sin riesgo; el envío solo se repite si no llegó a salir.
+        val token = reintentando(cualquiera) { tokenDeAcceso(context, llave) }
+        val (codigo, respuesta) = reintentando(noLlegoASalir) { post(url, mensaje.toString(), "application/json", token) }
         if (codigo != 200) Log.w("Toques", "FCM respondió $codigo: $respuesta")
-        codigo == 200
+        if (codigo == 200) null else "Firebase respondió $codigo"
     } catch (e: Exception) {
         Log.w("Toques", "No se pudo mandar el toque", e)
-        false
+        motivo(e)
+    }
+
+    private val cualquiera: (Exception) -> Boolean = { true }
+
+    /** Fallos en los que el mensaje seguro no llegó a Firebase: repetir no puede duplicar el toque. */
+    private val noLlegoASalir: (Exception) -> Boolean = { e ->
+        e is UnknownHostException || e is ConnectException ||
+            (e is SocketTimeoutException && e.message?.contains("connect", ignoreCase = true) == true)
+    }
+
+    private fun <T> reintentando(repetible: (Exception) -> Boolean, intentos: Int = 3, bloque: () -> T): T {
+        var n = 1
+        while (true) {
+            try {
+                return bloque()
+            } catch (e: Exception) {
+                if (n >= intentos || !repetible(e)) throw e
+                n++
+                Thread.sleep(1_500)
+            }
+        }
+    }
+
+    internal fun motivo(e: Exception): String = when {
+        e is UnknownHostException || e is ConnectException -> "sin conexión a internet"
+        e is SocketTimeoutException -> "la conexión es muy lenta"
+        e is SSLException -> "no se pudo abrir una conexión segura; revisa la hora del celular"
+        e is IllegalStateException && e.message?.startsWith("Google no dio token") == true ->
+            "Google no aceptó la llave (revisa la hora del celular)"
+        else -> "error inesperado"
     }
 
     private fun llave(context: Context) =

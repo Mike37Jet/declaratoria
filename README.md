@@ -107,6 +107,20 @@ La primera vez el carrusel arranca con las fotos de `public/photos/`. La fecha
 del "sí" y la URL están en `android/app/src/main/java/com/roguelito/rommicines/Juntos.kt`
 (si cambian en `src/config.ts`, cámbialas allí también).
 
+### Si los toques fallan seguido
+
+Android puede frenar el envío en segundo plano de una app que casi no abres. La app lo
+pide sola la primera vez (cuando eliges quién usa el celular): abre el diálogo del sistema
+de batería y, si falta, un botón te lleva a la pantalla de la app para el otro ajuste.
+Si aun así sale «No se pudo enviar», revisa esto en **Ajustes → Apps → ROMMICINES**:
+
+- **Batería → Sin restricciones** (o «No optimizar»).
+- Desactiva **«Quitar permisos si no se usa la app»** (en algunos celulares: «Pausar la
+  actividad de la app si no se usa»).
+
+El mensaje dice el motivo: «sin conexión a internet», «la conexión es muy lenta»,
+«Android lo retrasó más de 5 minutos», etc.
+
 ### Archivos que no están en el repo
 
 Al clonar, la app **no compila** hasta que pongas estos dos archivos de Firebase

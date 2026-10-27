@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.LruCache
@@ -130,6 +131,8 @@ class MainActivity : Activity() {
         super.onResume()
         principal.post(tic)
         mostrarAvisoRecepcion()
+        mostrarAvisoSegundoPlano()
+        pedirSegundoPlano()
         recargar()
         ContadorWidget.actualizarTodos(this)
     }
@@ -180,6 +183,50 @@ class MainActivity : Activity() {
         }
     }
 
+    /**
+     * Android frena y retrasa el trabajo en segundo plano de las apps que casi no se abren, y un toque
+     * retrasado más de 5 minutos se descarta. Dos ajustes lo evitan: sin optimización de batería y sin
+     * «quitar permisos si no se usa». El primero se pide con un diálogo del sistema; el segundo solo
+     * se puede cambiar a mano, así que se abre su pantalla de ajustes.
+     */
+    private fun sinOptimizarBateria() = getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
+
+    private fun sinPausaPorInactividad() = Build.VERSION.SDK_INT < 30 || packageManager.isAutoRevokeWhitelisted
+
+    private fun segundoPlanoListo() = sinOptimizarBateria() && sinPausaPorInactividad()
+
+    private fun abrirAjustesSegundoPlano() {
+        val paquete = Uri.parse("package:$packageName")
+        val intent = if (!sinOptimizarBateria()) Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, paquete)
+            else Intent(Intent.ACTION_AUTO_REVOKE_PERMISSIONS, paquete)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, paquete))
+        }
+    }
+
+    private fun mostrarAvisoSegundoPlano() {
+        findViewById<Button>(R.id.aviso_segundo_plano).apply {
+            visibility = if (segundoPlanoListo()) View.GONE else View.VISIBLE
+            text = if (!sinOptimizarBateria()) "Evitar que Android frene los toques" else "Desactivar la pausa de la app por inactividad"
+            setOnClickListener { abrirAjustesSegundoPlano() }
+        }
+    }
+
+    /** Una sola vez, cuando ya se sabe quién usa el celular: explica y lleva a los ajustes. */
+    private fun pedirSegundoPlano() {
+        val prefs = getSharedPreferences("permisos", MODE_PRIVATE)
+        if (Toques.yo(this) == null || prefs.getBoolean("segundo_plano_pedido", false) || segundoPlanoListo()) return
+        prefs.edit().putBoolean("segundo_plano_pedido", true).apply()
+        AlertDialog.Builder(this)
+            .setTitle("Para que los toques lleguen siempre")
+            .setMessage("Android frena las apps que casi no abres, y por eso un toque puede fallar. Te llevo a los ajustes para evitarlo.")
+            .setPositiveButton("Configurar") { _, _ -> abrirAjustesSegundoPlano() }
+            .setNegativeButton("Ahora no", null)
+            .show()
+    }
+
     private fun activarAvisos() {
         val prefs = getSharedPreferences("permisos", MODE_PRIVATE)
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -206,6 +253,7 @@ class MainActivity : Activity() {
                 mostrarQuienEres()
                 ContadorWidget.actualizarTodos(this)
                 dialogo.dismiss()
+                pedirSegundoPlano()
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -262,7 +310,7 @@ class MainActivity : Activity() {
             setTextColor(getColor(if (fallo) R.color.error_texto else R.color.cream_soft))
             text = when {
                 ocupado -> ""
-                fallo -> "No se pudo enviar. Revisa tu conexión."
+                fallo -> "No se pudo enviar: ${envio?.outputData?.getString("motivo") ?: "error inesperado"}."
                 !ocultarResultado && reciente && mismoMensaje && envio?.state == WorkInfo.State.SUCCEEDED ->
                     "Enviado a ${envio.outputData.getString("nombre")} · ${Toques.hora(envio.outputData.getLong("cuando", 0))}"
                 else -> ""

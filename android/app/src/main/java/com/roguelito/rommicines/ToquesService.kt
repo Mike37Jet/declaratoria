@@ -20,6 +20,7 @@ class ToquesService : FirebaseMessagingService() {
         Toques.registrar(this, recibido = true, nombre = toque.nombre, tipo = toque.tipo)
         ContadorWidget.actualizarTodos(this, soloConPie = true)
         avisar(this, toque)
+        ContadorWidget.latir(this)
     }
 
     // Se escucha un tema, así que el token del celular no hace falta guardarlo.

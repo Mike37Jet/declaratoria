@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Toques: mandarlos por internet y avisar cuando llegan. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Para pedir que Android no frene los envíos en segundo plano (la app no va a Play Store). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Para que la hora del contador cambie en el segundo exacto. Sin esto
          Android puede retrasar el cambio hasta 10 minutos. En Android 13+

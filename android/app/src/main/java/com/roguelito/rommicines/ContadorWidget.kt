@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.SizeF
+import android.util.TypedValue
 import android.widget.RemoteViews
 
 /**
@@ -72,23 +73,61 @@ class ContadorWidget : AppWidgetProvider() {
             programar(context, System.currentTimeMillis() + t.faltaParaLaHora + 300)
         }
 
+        private enum class Diseño { MINI, FRANJA, COMPLETO }
+
+        /** El diseño que el launcher está mostrando, según el tamaño actual del widget. */
+        private fun diseñoActual(context: Context, manager: AppWidgetManager, id: Int): Diseño {
+            val o = manager.getAppWidgetOptions(id)
+            @Suppress("DEPRECATION")
+            val tamaños = o.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
+            val vertical = context.resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            val (ancho, alto) = tamaños?.takeIf { it.isNotEmpty() }
+                ?.let { if (vertical) it.first() else it.last() }?.let { it.width to it.height }
+                ?: (o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).toFloat() to
+                    o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT).toFloat())
+            return when {
+                ancho >= COMPLETO.width && alto >= COMPLETO.height -> Diseño.COMPLETO
+                ancho >= FRANJA.width && alto >= FRANJA.height -> Diseño.FRANJA
+                else -> Diseño.MINI
+            }
+        }
+
+        /**
+         * Latido del corazón al recibir un toque: crece y se enciende dos veces. Un widget no se
+         * anima solo, así que son unas pocas actualizaciones en menos de un segundo. Cada una usa
+         * el mismo diseño, que el launcher aplica sin volver a crear el widget; las parciales
+         * las ignora en los widgets con varios diseños. El completo no late: su pie ya muestra
+         * el toque. [ritmo] alarga las pausas (solo para pruebas). Hace pausas: no llamar desde
+         * el hilo principal.
+         */
+        fun latir(context: Context, ritmo: Long = 1) {
+            val manager = AppWidgetManager.getInstance(context)
+            val vivos = manager.getAppWidgetIds(ComponentName(context, ContadorWidget::class.java))
+                .filter { diseñoActual(context, manager, it) != Diseño.COMPLETO }
+            if (vivos.isEmpty()) return
+            listOf(true to 220L, false to 120L, true to 220L, false to 0L).forEach { (grande, espera) ->
+                vivos.forEach { manager.updateAppWidget(it, vistas(context, manager, it, Juntos.ahora(), grande)) }
+                if (espera > 0) Thread.sleep(espera * ritmo)
+            }
+        }
+
         /** Tamaño (en dp) desde el que caben las tres cajitas con título. */
         private val COMPLETO = SizeF(250f, 100f)
         /** Ancho pero bajito (3×1, 4×1): las tres cajitas en una fila. */
         private val FRANJA = SizeF(230f, 56f)
         private val MINI = SizeF(100f, 40f)
 
-        private fun vistas(context: Context, manager: AppWidgetManager, id: Int, t: Juntos.Tiempo): RemoteViews {
+        private fun vistas(context: Context, manager: AppWidgetManager, id: Int, t: Juntos.Tiempo, latido: Boolean = false): RemoteViews {
             // Android 12+ elige solo el diseño según el tamaño, incluso mientras se redimensiona.
             if (Build.VERSION.SDK_INT >= 31) {
-                return RemoteViews(mapOf(MINI to mini(context, t), FRANJA to franja(context, t), COMPLETO to completo(context, t)))
+                return RemoteViews(mapOf(MINI to mini(context, t, latido), FRANJA to franja(context, t, latido), COMPLETO to completo(context, t)))
             }
             val opciones = manager.getAppWidgetOptions(id)
             val ancho = opciones.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
             val alto = opciones.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
             return when {
-                ancho in 1 until FRANJA.width.toInt() || alto in 1 until FRANJA.height.toInt() -> mini(context, t)
-                ancho in 1 until COMPLETO.width.toInt() || alto in 1 until COMPLETO.height.toInt() -> franja(context, t)
+                ancho in 1 until FRANJA.width.toInt() || alto in 1 until FRANJA.height.toInt() -> mini(context, t, latido)
+                ancho in 1 until COMPLETO.width.toInt() || alto in 1 until COMPLETO.height.toInt() -> franja(context, t, latido)
                 else -> completo(context, t)
             }
         }
@@ -118,7 +157,7 @@ class ContadorWidget : AppWidgetProvider() {
                 setContentDescription(R.id.enviar_toque, Toques.preferido(context).frase)
             }
 
-        private fun franja(context: Context, t: Juntos.Tiempo) =
+        private fun franja(context: Context, t: Juntos.Tiempo, latido: Boolean = false) =
             RemoteViews(context.packageName, R.layout.widget_contador_franja).apply {
                 setTextViewText(R.id.dias, t.dias.toString())
                 setTextViewText(R.id.dias_etiqueta, if (t.dias == 1L) "DÍA" else "DÍAS")
@@ -128,9 +167,12 @@ class ContadorWidget : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.raiz, Juntos.abrirPagina(context))
                 setOnClickPendingIntent(R.id.enviar_toque, botonToque(context))
                 setContentDescription(R.id.enviar_toque, Toques.preferido(context).frase)
+                // Se declara siempre: una actualización no revierte lo que ya no menciona.
+                setTextViewTextSize(R.id.enviar_toque, TypedValue.COMPLEX_UNIT_SP, if (latido) 24f else 15f)
+                setTextColor(R.id.enviar_toque, context.getColor(if (latido) R.color.latido else R.color.gold_light))
             }
 
-        private fun mini(context: Context, t: Juntos.Tiempo) =
+        private fun mini(context: Context, t: Juntos.Tiempo, latido: Boolean = false) =
             RemoteViews(context.packageName, R.layout.widget_contador_mini).apply {
                 val linea = "%d %s · %02d h".format(t.dias, if (t.dias == 1L) "día" else "días", t.horas)
                 setTextViewText(R.id.linea, linea)
@@ -138,6 +180,8 @@ class ContadorWidget : AppWidgetProvider() {
                 setOnClickPendingIntent(R.id.raiz, botonToque(context))
                 setContentDescription(R.id.raiz, "Enviar: ${Toques.preferido(context).frase}")
                 setOnClickPendingIntent(R.id.abrir_pagina, Juntos.abrirPagina(context))
+                setTextViewTextSize(R.id.abrir_pagina, TypedValue.COMPLEX_UNIT_SP, if (latido) 22f else 12f)
+                setTextColor(R.id.abrir_pagina, context.getColor(if (latido) R.color.latido else R.color.gold))
             }
 
         private fun RemoteViews.reloj(t: Juntos.Tiempo) {
@@ -160,7 +204,7 @@ class ContadorWidget : AppWidgetProvider() {
             if (System.currentTimeMillis() - e.cuando > visible) return null
             val hora = Toques.hora(e.cuando)
             return when {
-                e.fallo -> "No se pudo mandar el toque (¿internet?)"
+                e.fallo -> "No se pudo mandar el toque${e.motivo?.let { " ($it)" } ?: ""}"
                 e.recibido -> "${e.tipo.recibido(e.nombre)} · $hora"
                 else -> "${e.tipo.etiqueta} → ${e.nombre} · $hora"
             }

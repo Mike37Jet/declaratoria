@@ -111,6 +111,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone" />
+        <Button
+            android:id="@+id/aviso_segundo_plano"
+            style="@style/AccionTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
         <LinearLayout
             android:id="@+id/cabecera_fotos"
             android:layout_width="match_parent"

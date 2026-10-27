@@ -20,20 +20,22 @@ class EnviarToqueWorker(context: Context, parametros: WorkerParameters) : Worker
         val aviso = inputData.getString("aviso")
         // Un toque aplazado por Android no debe aparecer horas después.
         val vigente = System.currentTimeMillis() - inputData.getLong("cuando", 0) < 5 * 60_000
-        val ok = vigente && Toques.enviar(applicationContext, tipo, inputData.getString("para"))
-        Toques.registrar(applicationContext, recibido = false, nombre = nombre, fallo = !ok, tipo = tipo)
+        val motivo = if (vigente) Toques.enviar(applicationContext, tipo, inputData.getString("para"))
+            else "Android lo retrasó más de 5 minutos"
+        val ok = motivo == null
+        Toques.registrar(applicationContext, recibido = false, nombre = nombre, fallo = !ok, tipo = tipo, motivo = motivo)
         ContadorWidget.actualizarTodos(applicationContext, soloConPie = true)
         if (aviso != null) {
             ToquesService.resultadoBeso(applicationContext, aviso, nombre, ok)
         } else if (!inputData.getBoolean("silencioso", false)) {
             Handler(Looper.getMainLooper()).post {
-                val texto = if (ok) "Enviado a $nombre" else "No se pudo enviar. Revisa tu conexión."
+                val texto = if (ok) "Enviado a $nombre" else "No se pudo enviar: $motivo."
                 Toast.makeText(applicationContext, texto, Toast.LENGTH_SHORT).show()
             }
         }
         // No reintentar automáticamente: una respuesta de red perdida podría duplicar el toque.
         val resultado = Data.Builder().putString("tipo", tipo.codigo).putString("nombre", nombre)
-            .putLong("cuando", System.currentTimeMillis()).build()
+            .putLong("cuando", System.currentTimeMillis()).putString("motivo", motivo).build()
         return if (ok) Result.success(resultado) else Result.failure(resultado)
     }
 
