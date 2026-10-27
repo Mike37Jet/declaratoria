@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Los agujeritos de la cinta de película, repetidos a lo ancho. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/perforacion_px"
+    android:tileMode="repeat" />

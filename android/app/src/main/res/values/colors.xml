@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Los mismos colores de la página (src/index.css). -->
+<resources>
+    <color name="cinema">#0A0505</color>
+    <color name="velvet">#8B0000</color>
+    <color name="velvet_dark">#4A0404</color>
+    <color name="gold">#D4AF37</color>
+    <color name="gold_light">#F3D580</color>
+    <color name="cream">#F5EAD6</color>
+    <color name="cream_soft">#99F5EAD6</color>
+    <color name="gold_glow">#12D4AF37</color>
+    <color name="error_texto">#FFB4AB</color>
+</resources>

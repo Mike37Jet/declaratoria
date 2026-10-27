@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cinema"
+    android:fillViewport="true"
+    android:clipToPadding="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="24dp">
+        <LinearLayout
+            android:id="@+id/cabecera"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/titulo_app"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:letterSpacing="0.06"
+                android:text="@string/app_name"
+                android:textColor="@color/gold"
+                android:textSize="23sp"
+                android:textStyle="bold" />
+            <Button
+                android:id="@+id/ayuda"
+                style="@style/AccionTexto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ayuda" />
+        </LinearLayout>
+        <Button
+            android:id="@+id/identidad"
+            style="@style/AccionTexto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start|center_vertical"
+            android:paddingStart="0dp"
+            android:text="@string/elegir_nombre"
+            android:textColor="@color/cream_soft" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/panel_inicio"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="18dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/tiempo_juntos"
+                android:textColor="@color/cream_soft"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/contador"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:textColor="@color/gold_light"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/destinatario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:fontFamily="serif"
+            android:text="@string/un_toque"
+            android:textColor="@color/cream"
+            android:textSize="21sp" />
+        <Button
+            android:id="@+id/elegir_toque"
+            style="@style/AccionSecundaria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="start|center_vertical"
+            android:text="@string/elegir_toque" />
+        <Button
+            android:id="@+id/mandar_toque"
+            style="@style/AccionPrincipal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/enviar_toque" />
+        <TextView
+            android:id="@+id/estado_toque"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="32dp"
+            android:accessibilityLiveRegion="polite"
+            android:gravity="center"
+            android:paddingTop="6dp"
+            android:textColor="@color/cream_soft"
+            android:textSize="13sp" />
+        <Button
+            android:id="@+id/aviso_recepcion"
+            style="@style/AccionTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/cabecera_fotos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/titulo_fotos"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:text="@string/recuerdos"
+                android:textColor="@color/cream"
+                android:textSize="21sp" />
+            <Button
+                android:id="@+id/agregar"
+                style="@style/AccionTexto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/anadir_fotos" />
+        </LinearLayout>
+        <com.roguelito.rommicines.GaleriaInicio
+            android:id="@+id/fotos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:horizontalSpacing="8dp"
+            android:verticalSpacing="8dp"
+            android:numColumns="3"
+            android:stretchMode="columnWidth"
+            android:scrollbars="none" />
+        <TextView
+            android:id="@+id/sin_fotos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="24dp"
+            android:text="@string/sin_fotos"
+            android:textColor="@color/cream_soft"
+            android:textSize="14sp"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/ver_fotos"
+            style="@style/AccionTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ver_todas"
+            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/resultado_fotos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/estado_fotos"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityLiveRegion="polite"
+                android:textColor="@color/cream_soft"
+                android:textSize="13sp" />
+            <Button
+                android:id="@+id/accion_fotos"
+                style="@style/AccionTexto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/deshacer" />
+        </LinearLayout>
+        <Button
+            android:id="@+id/poner_widget"
+            style="@style/AccionSecundaria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/anadir_widget" />
+    </LinearLayout>
+</ScrollView>

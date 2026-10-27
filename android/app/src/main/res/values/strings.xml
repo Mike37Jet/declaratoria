@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ROMMICINES</string>
+    <string name="carrusel_nombre">Carrusel de fotos</string>
+    <string name="carrusel_descripcion">Nuestras fotos, pasando como una película</string>
+    <string name="contador_nombre">Tiempo juntos</string>
+    <string name="contador_descripcion">Días, horas, minutos y segundos desde el sí</string>
+    <string name="contador_titulo">♥ JUNTOS DESDE EL SÍ ♥</string>
+    <string name="contador_pie">…y contando · toca para ver la función ▶</string>
+    <string name="quien_eres">¿Quién usa este celular?</string>
+    <string name="mandar_toque">♥ Mandar un toque</string>
+    <string name="elegir_toque">Estoy pensando en ti ▾</string>
+    <string name="ayuda_toque">Elige una frase y toca Enviar. Tu widget enviará la misma. El corazón pequeño abre la página.</string>
+    <string name="ayuda">Ayuda</string>
+    <string name="elegir_nombre">Elegir mi nombre ▾</string>
+    <string name="tiempo_juntos">Nuestro tiempo juntos</string>
+    <string name="un_toque">Un toque de cariño</string>
+    <string name="enviar_toque">Enviar toque</string>
+    <string name="recuerdos">Nuestros recuerdos</string>
+    <string name="anadir_fotos">Añadir fotos</string>
+    <string name="ver_todas">Ver todas</string>
+    <string name="deshacer">Deshacer</string>
+    <string name="anadir_widget">Añadir widget</string>
+    <string name="ver_funcion">▶ VER LA FUNCIÓN</string>
+    <string name="carrusel_vacio">Toca para agregar fotos ♥</string>
+    <string name="subtitulo">Para Mimina, de Roguelito ♥</string>
+    <string name="agregar_fotos">＋ Agregar fotos</string>
+    <string name="poner_carrusel">Poner carrusel</string>
+    <string name="poner_contador">Poner contador</string>
+    <string name="ayuda_quitar">Mantén presionada una foto para quitarla del carrusel.</string>
+    <string name="ayuda_widgets">También puedes ponerlos tú: mantén presionado un espacio vacío de la pantalla de inicio → Widgets → ROMMICINES.</string>
+    <string name="permitir_alarmas">Para que el contador cambie de hora en el segundo exacto, permite \"Alarmas y recordatorios\" →</string>
+    <string name="sin_fotos">Tu primer recuerdo empieza con una foto.</string>
+
+</resources>

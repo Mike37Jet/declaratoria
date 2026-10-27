@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- updatePeriodMillis es solo un respaldo: la hora cambia con una alarma
+     puntual y los minutos/segundos corren solos con el Chronometer. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/contador_descripcion"
+    android:initialLayout="@layout/widget_contador"
+    android:previewLayout="@layout/widget_contador"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="100dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen|keyguard" />

@@ -1,0 +1,16 @@
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+
+# Configuración cliente de Firebase (con la clave de API del proyecto): no se sube.
+# Hay que descargarla de nuevo al clonar; ver el README, «Archivos que no están en el repo».
+app/google-services.json
+
+# Llave privada de Firebase (cuenta de servicio): nunca al repo.
+# Viaja dentro del APK desde app/secreto/, pero no se sube a GitHub.
+app/secreto/
+*-firebase-adminsdk-*.json
