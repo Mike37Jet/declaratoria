@@ -27,6 +27,17 @@ Widget del contador ([ContadorWidget.kt](android/app/src/main/java/com/roguelito
 con tres diseños según el tamaño: mini (2×1, 1×1), franja (3×1, 4×1) y completo (4×2).
 Los umbrales están en `COMPLETO` / `FRANJA` / `MINI` (en dp; un 2×1 mide ~180 dp).
 
+El contador tiene 10 diseños ([Tema.kt](android/app/src/main/java/com/roguelito/rommicines/Tema.kt)),
+cada widget el suyo, y se eligen en `ElegirTemaActivity` (ajustes del widget o «Añadir widget» en la app).
+Cada diseño tiene sus tres layouts `widget_<tema>.xml`, `_franja` y `_mini` con los mismos ids
+(un widget no puede cambiar de fuente en tiempo de ejecución). El ♥ va como `♥&#xFE0E;` para que
+no salga como emoji y tome el color del diseño.
+
+La **libreta compartida** vive en `android/.../libreta/` (`LibretaActivity`, datos en `Libreta.kt`):
+Firestore + acceso anónimo + código de 6 letras para unir el segundo celular. Las reglas están en
+`android/firestore.rules` y se pegan a mano en la consola de Firebase (Firestore → Reglas).
+Diseño de papelería (letra Caveat, `colors_libreta.xml`), nada del estilo cine.
+
 ## Cosas que no se ven en el código
 
 - **La fecha del "sí" está duplicada**: `OFFICIAL_YES_DATE` en `src/config.ts` y `DESDE` en

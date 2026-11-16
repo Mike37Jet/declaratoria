@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La tarjeta del diseño que está en uso: igual que las demás, con borde dorado. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#26D4AF37">
+    <item>
+        <shape>
+            <solid android:color="#15100C" />
+            <stroke android:width="2dp" android:color="@color/gold" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</ripple>

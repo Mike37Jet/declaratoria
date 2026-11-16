@@ -5,7 +5,7 @@
     <string name="carrusel_descripcion">Nuestras fotos, pasando como una película</string>
     <string name="contador_nombre">Tiempo juntos</string>
     <string name="contador_descripcion">Días, horas, minutos y segundos desde el sí</string>
-    <string name="contador_titulo">♥ JUNTOS DESDE EL SÍ ♥</string>
+    <string name="contador_titulo">♥&#xFE0E; JUNTOS DESDE EL SÍ ♥&#xFE0E;</string>
     <string name="contador_pie">…y contando · toca para ver la función ▶</string>
     <string name="quien_eres">¿Quién usa este celular?</string>
     <string name="mandar_toque">♥ Mandar un toque</string>
@@ -32,4 +32,5 @@
     <string name="permitir_alarmas">Para que el contador cambie de hora en el segundo exacto, permite \"Alarmas y recordatorios\" →</string>
     <string name="sin_fotos">Tu primer recuerdo empieza con una foto.</string>
 
+    <string name="nuestra_libreta">Nuestra libreta</string>
 </resources>

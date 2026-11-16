@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material You: en Android 12+ el diseño toma los colores del fondo de pantalla. -->
+<resources>
+    <color name="material_fondo">@android:color/system_accent1_100</color>
+    <color name="material_caja">@android:color/system_accent1_50</color>
+    <color name="material_texto">@android:color/system_accent1_900</color>
+    <color name="material_secundario">@android:color/system_accent1_700</color>
+    <color name="material_boton">@android:color/system_accent1_600</color>
+    <color name="material_boton_presionado">@android:color/system_accent1_800</color>
+    <color name="material_sobre_boton">@android:color/system_accent1_0</color>
+    <color name="material_latido">@android:color/system_accent3_600</color>
+    <color name="material_latido_boton">@android:color/system_accent3_100</color>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La cinta adhesiva celeste que sostiene la polaroid. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/polaroid_cinta" />
+    <corners android:radius="1dp" />
+</shape>

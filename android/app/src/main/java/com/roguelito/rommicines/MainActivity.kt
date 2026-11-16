@@ -86,6 +86,9 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.ayuda).setOnClickListener { mostrarAyuda() }
         findViewById<View>(R.id.identidad).setOnClickListener { preguntarQuienEres() }
         findViewById<View>(R.id.mandar_toque).setOnClickListener { mandarToque() }
+        findViewById<View>(R.id.abrir_libreta).setOnClickListener {
+            startActivity(Intent(this, com.roguelito.rommicines.libreta.LibretaActivity::class.java))
+        }
         findViewById<View>(R.id.elegir_toque).setOnClickListener { elegirToque() }
         findViewById<View>(R.id.ver_fotos).setOnClickListener {
             todasLasFotos = !todasLasFotos
@@ -442,13 +445,14 @@ class MainActivity : Activity() {
     }
 
     private fun elegirWidget() {
-        val opciones = mutableListOf("Contador · tiempo juntos", "Carrusel · nuestras fotos")
+        val opciones = mutableListOf("Contador · tiempo juntos", "Carrusel · nuestras fotos", "Cambiar el diseño del contador")
         if (!ContadorWidget.alarmasExactas(this)) opciones.add("Sincronizar la hora del contador")
         AlertDialog.Builder(this).setTitle("Añadir a tu pantalla de inicio")
             .setItems(opciones.toTypedArray()) { _, i ->
                 when (i) {
                     0 -> ponerWidget(ContadorWidget::class.java)
                     1 -> ponerWidget(CarruselWidget::class.java)
+                    2 -> startActivity(Intent(this, ElegirTemaActivity::class.java))
                     else -> if (Build.VERSION.SDK_INT >= 31) startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
                 }
             }
@@ -467,7 +471,7 @@ class MainActivity : Activity() {
         val temas = arrayOf("Enviar y responder", "Poner un widget", "Mis fotos", "Mi nombre")
         val pasos = arrayOf(
             getString(R.string.ayuda_toque) + "\n\nPara responder, toca ‘Un beso de vuelta’ en la notificación.",
-            "Toca ‘Añadir widget’ y elige contador o carrusel.\n\nSi no aparece la ventana, mantén pulsado el inicio del celular → Widgets → ROMMICINES.",
+            "Toca ‘Añadir widget’ y elige contador o carrusel.\n\nSi no aparece la ventana, mantén pulsado el inicio del celular → Widgets → ROMMICINES.\n\nPara cambiar el diseño del contador (Cielo, Neón, Perla…): ‘Añadir widget’ → ‘Cambiar el diseño del contador’, o mantén presionado el widget y toca el lápiz.",
             "Toca ‘Añadir fotos’ para elegir imágenes. Toca una foto para verla o quitarla del carrusel. Después puedes usar ‘Deshacer’.",
             "Toca tu nombre bajo ROMMICINES para cambiarlo. Elige un nombre distinto en cada celular."
         )

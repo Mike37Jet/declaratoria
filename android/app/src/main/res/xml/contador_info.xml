@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- updatePeriodMillis es solo un respaldo: la hora cambia con una alarma
-     puntual y los minutos/segundos corren solos con el Chronometer. -->
+     puntual y los minutos/segundos corren solos con el Chronometer.
+     El diseño se elige en ElegirTemaActivity: en Android 12+ es opcional al ponerlo
+     y se puede cambiar después desde el lápiz/ajustes del widget. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/contador_descripcion"
     android:initialLayout="@layout/widget_contador"
@@ -12,5 +14,7 @@
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
+    android:configure="com.roguelito.rommicines.ElegirTemaActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen|keyguard" />

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos fijos de cada diseño del contador. -->
+<resources>
+    <string name="cielo_titulo">nuestro cielo</string>
+    <string name="cielo_pie">mirando el mismo cielo</string>
+    <string name="atardecer_titulo">cada atardecer, uno más</string>
+    <string name="atardecer_pie">☀&#xFE0E; y contando</string>
+    <string name="polaroid_titulo">días contigo</string>
+    <string name="polaroid_pie">y contando…</string>
+    <string name="neon_titulo">♥&#xFE0E; JUGADOR 2 SE UNIÓ ♥&#xFE0E;</string>
+    <string name="neon_pie">récord: ∞</string>
+    <string name="nube_titulo">juntos</string>
+    <string name="nube_pie">desde que dijiste que sí</string>
+    <string name="material_titulo">Juntos</string>
+    <string name="material_pie">y contando</string>
+    <string name="perla_titulo">ROMMICINES</string>
+    <string name="azul_titulo">✦ DESDE EL SÍ ✦</string>
+    <string name="azul_pie">bajo las mismas estrellas</string>
+    <string name="elegir_diseno">Diseño del contador</string>
+    <string name="elegir_diseno_ayuda">Toca uno para usarlo. Puedes cambiarlo cuando quieras.</string>
+</resources>

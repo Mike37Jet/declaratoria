@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La libreta: papelería, nada del estilo cine. -->
+<resources>
+    <color name="escritorio">#2A221D</color>
+    <color name="tapa_tela">#2F5D50</color>
+    <color name="tapa_tela_oscura">#244A40</color>
+    <color name="tapa_etiqueta">#F3EAD3</color>
+    <color name="elastico">#1C1C1C</color>
+    <color name="hoja">#FBF6EA</color>
+    <color name="renglon">#C9D8E8</color>
+    <color name="margen">#E58A8A</color>
+    <color name="tinta_azul">#1F4E9C</color>
+    <color name="tinta_rosa">#C2185B</color>
+    <color name="tinta_lapiz">#3A3530</color>
+    <color name="tinta_suave">#6E655A</color>
+    <color name="tinta_guia">#9C9384</color>
+    <color name="sello">#B3261E</color>
+</resources>

@@ -150,7 +150,7 @@
             android:contentDescription="Mandar un toque"
             android:paddingHorizontal="12dp"
             android:paddingVertical="3dp"
-            android:text="♥"
+            android:text="♥&#xFE0E;"
             android:textColor="@color/gold_light"
             android:textSize="15sp" />
     </LinearLayout>

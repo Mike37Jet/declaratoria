@@ -34,6 +34,22 @@
             </intent-filter>
         </activity>
 
+        <!-- Elegir el diseño del contador: la abre el launcher al poner o editar el widget. -->
+        <activity
+            android:name=".libreta.LibretaActivity"
+            android:exported="false"
+            android:label="@string/nuestra_libreta"
+            android:theme="@style/TemaLibreta"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ElegirTemaActivity"
+            android:exported="true"
+            android:label="@string/elegir_diseno">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".CarruselWidget"
             android:exported="false"

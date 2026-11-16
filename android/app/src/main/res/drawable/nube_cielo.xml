@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Una nubecita para la esquina del diseño Cielo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="56dp" android:height="26dp" android:viewportWidth="56" android:viewportHeight="26">
+    <path android:fillColor="#E6FFFFFF"
+        android:pathData="M12,26 A10,10 0 0 1 12,8 A12,12 0 0 1 33,4 A10,10 0 0 1 46,12 A7,7 0 0 1 46,26 Z" />
+</vector>

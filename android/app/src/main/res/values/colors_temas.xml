@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colores de los diseños del contador (el diseño Cine usa los de colors.xml). -->
+<resources>
+    <!-- Cielo -->
+    <color name="cielo_alto">#8FD3FF</color>
+    <color name="cielo_bajo">#D8F1FF</color>
+    <color name="cielo_caja">#D9FFFFFF</color>
+    <color name="cielo_numero">#1E78B8</color>
+    <color name="cielo_etiqueta">#2F6F9E</color>
+    <color name="cielo_titulo">#1F5E8C</color>
+    <color name="cielo_corazon">#C2185B</color>
+    <color name="cielo_latido">#E0004D</color>
+    <!-- Atardecer -->
+    <color name="atardecer_1">#C8553D</color>
+    <color name="atardecer_2">#B83B7A</color>
+    <color name="atardecer_3">#5B4BC4</color>
+    <color name="atardecer_texto">#FFFFFF</color>
+    <color name="atardecer_suave">#F2FFFFFF</color>
+    <color name="atardecer_sombra">#55602040</color>
+    <color name="atardecer_latido">#FFE07A</color>
+    <!-- Polaroid -->
+    <color name="polaroid_papel">#FBF7EE</color>
+    <color name="polaroid_borde">#E6DECB</color>
+    <color name="polaroid_cinta">#CCA8DCF5</color>
+    <color name="polaroid_tinta">#3A3530</color>
+    <color name="polaroid_tinta_suave">#6E655A</color>
+    <color name="polaroid_titulo">#2A6F9E</color>
+    <color name="polaroid_corazon">#C2185B</color>
+    <color name="polaroid_latido">#E0004D</color>
+    <!-- Neón -->
+    <color name="neon_fondo">#0E0B1F</color>
+    <color name="neon_rosa">#FF4FD8</color>
+    <color name="neon_rosa_halo">#55FF4FD8</color>
+    <color name="neon_cian">#5CF6FF</color>
+    <color name="neon_cian_halo">#555CF6FF</color>
+    <color name="neon_etiqueta">#FF9BE9</color>
+    <color name="neon_pie">#8E86C9</color>
+    <!-- Nube -->
+    <color name="nube_fondo">#FFFFFF</color>
+    <color name="nube_borde">#E3EAF0</color>
+    <color name="nube_texto">#1C2B36</color>
+    <color name="nube_gris">#5B7283</color>
+    <color name="nube_celeste">#1A78B0</color>
+    <color name="nube_latido">#D81B60</color>
+    <!-- Medianoche -->
+    <color name="medianoche_fondo">#000000</color>
+    <color name="medianoche_texto">#FFFFFF</color>
+    <color name="medianoche_gris">#8C8C8C</color>
+    <color name="medianoche_linea">#3A3A3A</color>
+    <color name="medianoche_latido">#FF4D5E</color>
+    <!-- Material You: en Android 12+ salen del fondo de pantalla (values-v31). -->
+    <color name="material_fondo">#EADDFF</color>
+    <color name="material_caja">#F6EDFF</color>
+    <color name="material_texto">#21005D</color>
+    <color name="material_secundario">#4F378B</color>
+    <color name="material_boton">#6750A4</color>
+    <color name="material_boton_presionado">#4F378B</color>
+    <color name="material_sobre_boton">#FFFFFF</color>
+    <color name="material_latido">#B3261E</color>
+    <!-- Latido encima del botón de la franja: claro, para que no se pierda en el botón. -->
+    <color name="material_latido_boton">#FFD8E4</color>
+    <!-- Perla -->
+    <color name="perla_fondo">#F8F3EC</color>
+    <color name="perla_borde">#C9919A</color>
+    <color name="perla_acento">#A85F6B</color>
+    <color name="perla_texto">#5A3E42</color>
+    <color name="perla_latido">#D9314F</color>
+    <!-- Azul noche -->
+    <color name="azul_fondo">#0B1E3A</color>
+    <color name="azul_plata">#9FB4CF</color>
+    <color name="azul_caja">#2F4E78</color>
+    <color name="azul_texto">#E6EEF8</color>
+    <color name="azul_celeste">#7EC8F2</color>
+    <color name="azul_latido">#FFFFFF</color>
+</resources>

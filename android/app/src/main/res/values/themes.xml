@@ -46,4 +46,13 @@
         <item name="android:background">@drawable/enviar_inicio</item>
         <item name="android:textStyle">bold</item>
     </style>
+    <!-- La libreta: una hoja sobre un escritorio de madera, sin los colores de cine. -->
+    <style name="TemaLibreta" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/escritorio</item>
+        <item name="android:statusBarColor">@color/escritorio</item>
+        <item name="android:navigationBarColor">@color/escritorio</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">@color/tapa_tela</item>
+        <item name="android:textColor">@color/tinta_lapiz</item>
+    </style>
 </resources>

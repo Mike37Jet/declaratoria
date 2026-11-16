@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Atardecer: durazno → rosa → lila, en diagonal. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient android:angle="315" android:startColor="@color/atardecer_1"
+        android:centerColor="@color/atardecer_2" android:endColor="@color/atardecer_3" />
+    <corners android:radius="18dp" />
+</shape>

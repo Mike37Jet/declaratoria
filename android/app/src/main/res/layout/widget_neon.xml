@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Contador completo, diseño Neón. Generado junto a los demás diseños: mismos ids en todos. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/marco_neon">
+    
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+        android:paddingHorizontal="10dp" android:paddingTop="10dp" android:paddingBottom="10dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:maxLines="1"
+            android:paddingHorizontal="4dp" android:text="@string/neon_titulo"
+            android:fontFamily="monospace" android:textColor="@color/neon_rosa" android:textSize="10sp" android:textStyle="bold" android:letterSpacing="0.18" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginVertical="3dp"
+            android:layout_weight="1" android:orientation="horizontal">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="4dp"
+            android:layout_weight="1" android:background="@drawable/caja_neon" android:gravity="center" android:orientation="vertical">
+            <TextView android:id="@+id/dias" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:includeFontPadding="false" android:text="37" android:fontFamily="monospace" android:textColor="@color/neon_cian" android:textSize="26sp" android:textStyle="bold" />
+            <TextView android:id="@+id/dias_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:text="días" android:fontFamily="monospace" android:textColor="@color/neon_etiqueta" android:textSize="9sp" android:letterSpacing="0.06" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="4dp"
+            android:layout_weight="1" android:background="@drawable/caja_neon" android:gravity="center" android:orientation="vertical">
+            <TextView android:id="@+id/horas" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:includeFontPadding="false" android:text="05" android:fontFamily="monospace" android:textColor="@color/neon_cian" android:textSize="26sp" android:textStyle="bold" />
+            <TextView android:id="@+id/horas_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:text="horas" android:fontFamily="monospace" android:textColor="@color/neon_etiqueta" android:textSize="9sp" android:letterSpacing="0.06" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="4dp"
+            android:layout_weight="1.6" android:background="@drawable/caja_neon" android:gravity="center" android:orientation="vertical">
+            <Chronometer android:id="@+id/minseg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:includeFontPadding="false" android:fontFamily="monospace" android:textColor="@color/neon_cian" android:textSize="26sp" android:textStyle="bold" />
+            <TextView android:id="@+id/minseg_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
+                android:text="MIN · SEG" android:fontFamily="monospace" android:textColor="@color/neon_etiqueta" android:textSize="9sp" android:letterSpacing="0.06" />
+        </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical"
+            android:orientation="horizontal" android:paddingHorizontal="4dp">
+            <TextView android:id="@+id/pie" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:ellipsize="end" android:maxLines="1" android:text="@string/neon_pie"
+                android:fontFamily="monospace" android:textColor="@color/neon_pie" android:textSize="11sp" />
+            <TextView android:id="@+id/enviar_toque" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:background="@drawable/boton_neon" android:contentDescription="Mandar un toque" android:gravity="center"
+            android:minWidth="40dp" android:paddingHorizontal="12dp" android:paddingVertical="3dp" 
+            android:text="♥&#xFE0E;" android:textColor="@color/neon_rosa" android:textSize="15sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

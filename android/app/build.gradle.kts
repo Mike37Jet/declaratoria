@@ -34,7 +34,14 @@ android {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
     implementation("com.google.firebase:firebase-messaging")
+    // La libreta compartida: datos en Firestore y acceso anónimo (ver libreta/Libreta.kt).
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
+    // Resortes para la tapa, el elástico y el tachado.
+    implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
     implementation("androidx.work:work-runtime:2.10.2")
+    // WorkManager usa ListenableFuture; con Firestore llega la versión vacía y hay que traer guava completa.
+    implementation("com.google.guava:guava:33.6.0-android")
     testImplementation("junit:junit:4.13.2")
 }
 
