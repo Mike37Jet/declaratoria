@@ -179,35 +179,3 @@ class Boleto(context: Context, attrs: AttributeSet? = null) : View(context, attr
         chico.letterSpacing = 0.16f; chico.textAlign = Paint.Align.LEFT
     }
 }
-
-/** Pone sus hijos uno al lado del otro y pasa al renglón siguiente cuando no caben (las frases del toque). */
-class Renglones(context: Context, attrs: AttributeSet? = null) : android.view.ViewGroup(context, attrs) {
-    private val hueco = (8 * resources.displayMetrics.density).toInt()
-
-    override fun onMeasure(w: Int, h: Int) {
-        val ancho = MeasureSpec.getSize(w) - paddingLeft - paddingRight
-        var x = 0; var y = 0; var alto = 0
-        for (i in 0 until childCount) {
-            val v = getChildAt(i)
-            if (v.visibility == GONE) continue
-            v.measure(MeasureSpec.makeMeasureSpec(ancho, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
-            if (x > 0 && x + v.measuredWidth > ancho) { x = 0; y += alto + hueco; alto = 0 }
-            x += v.measuredWidth + hueco
-            alto = maxOf(alto, v.measuredHeight)
-        }
-        setMeasuredDimension(MeasureSpec.getSize(w), y + alto + paddingTop + paddingBottom)
-    }
-
-    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
-        val ancho = r - l - paddingLeft - paddingRight
-        var x = 0; var y = 0; var alto = 0
-        for (i in 0 until childCount) {
-            val v = getChildAt(i)
-            if (v.visibility == GONE) continue
-            if (x > 0 && x + v.measuredWidth > ancho) { x = 0; y += alto + hueco; alto = 0 }
-            v.layout(paddingLeft + x, paddingTop + y, paddingLeft + x + v.measuredWidth, paddingTop + y + v.measuredHeight)
-            x += v.measuredWidth + hueco
-            alto = maxOf(alto, v.measuredHeight)
-        }
-    }
-}

@@ -1,38 +1,53 @@
 package com.roguelito.rommicines
 
 import android.content.Context
-import android.util.Base64
 import android.util.Log
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
+import com.roguelito.rommicines.libreta.Libreta
 import org.json.JSONObject
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.SocketTimeoutException
-import java.net.URLEncoder
 import java.net.UnknownHostException
-import java.security.KeyFactory
-import java.security.Signature
-import java.security.spec.PKCS8EncodedKeySpec
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLException
 
 /**
  * 💗 Toques: un corazón que uno manda desde su widget y le llega al otro.
  *
- * Los dos celulares escuchan el mismo tema de Firebase Cloud Messaging. Para
- * mandar, la app firma un JWT con la llave de la cuenta de servicio (assets/
- * firebase-llave.json), lo cambia por un token de Google y publica en el tema.
- * Cada celular ignora sus propios toques.
+ * Los dos celulares escuchan el tema de su pareja en Firebase Cloud Messaging
+ * (`pareja-<id de la libreta>`). Para mandar, la app se lo pide al servidor de avisos,
+ * que guarda la llave de Firebase. Cada celular ignora sus propios toques.
  */
 object Toques {
-    const val TEMA = "toques"
+    /** El tema viejo, que escuchaba cualquiera con la app. Ya no se usa: solo se deja de escuchar. */
+    const val TEMA_VIEJO = "toques"
+
+    /** Servidor de avisos (Cloudflare Worker, carpeta `servidor/`). */
+    const val SERVIDOR = "https://rommicines-avisos.rommicines.workers.dev/publicar"
+
+    /** El tema que solo escuchan los dos celulares de una pareja. */
+    fun tema(pareja: String) = "pareja-$pareja"
     const val ROGUELITO = "Roguelito"
     const val MIMINA = "Mimina"
 
-    private const val ALCANCE = "https://www.googleapis.com/auth/firebase.messaging"
+    /**
+     * Escucha el tema de la pareja y deja de escuchar el viejo. Sin libreta no hay nada que escuchar.
+     * [listo] dice si la suscripción salió bien.
+     */
+    fun suscribir(context: Context, listo: (Boolean) -> Unit = {}) {
+        val fcm = FirebaseMessaging.getInstance()
+        fcm.unsubscribeFromTopic(TEMA_VIEJO)
+        val pareja = Libreta.pareja(context) ?: return listo(true)
+        fcm.subscribeToTopic(tema(pareja)).addOnCompleteListener { listo(it.isSuccessful) }
+    }
 
     private fun prefs(context: Context) = context.getSharedPreferences("toques", Context.MODE_PRIVATE)
 
@@ -117,28 +132,37 @@ object Toques {
         return publicar(context, MensajeToque(idCelular(context), yo, tipo, para).datos())
     }
 
-    /** Publica [datos] en el tema de los dos celulares. Hace red. Null si salió bien, o el motivo. */
+    /**
+     * Publica [datos] en el tema de la pareja. Hace red. Null si salió bien, o el motivo.
+     * La app no lleva la llave de Firebase: se lo pide al servidor de avisos (carpeta `servidor/`
+     * del repo), que comprueba con la sesión del celular que es miembro de la libreta.
+     */
     fun publicar(context: Context, datos: Map<String, String>, ttl: String = "3600s"): String? = try {
-        val mensaje = JSONObject().put(
-            "message",
-            JSONObject()
-                .put("topic", TEMA)
-                .put("data", JSONObject(datos))
-                .put("android", JSONObject().put("priority", "high").put("ttl", ttl)),
-        )
-        val llave = llave(context)
-        val url = "https://fcm.googleapis.com/v1/projects/${llave.getString("project_id")}/messages:send"
-        // El token se puede pedir de nuevo sin riesgo; el envío solo se repite si no llegó a salir.
-        val token = reintentando(cualquiera) { tokenDeAcceso(context, llave) }
-        val (codigo, respuesta) = reintentando(noLlegoASalir) { post(url, mensaje.toString(), "application/json", token) }
-        if (codigo != 200) Log.w("Toques", "FCM respondió $codigo: $respuesta")
-        if (codigo == 200) null else "Firebase respondió $codigo"
+        val pareja = Libreta.pareja(context)
+        val usuario = FirebaseAuth.getInstance().currentUser
+        if (pareja == null || usuario == null) {
+            "primero unan su libreta"
+        } else {
+            val cuerpo = JSONObject().put("pareja", pareja).put("datos", JSONObject(datos)).put("ttl", ttl).toString()
+            fun intento(renovar: Boolean): Pair<Int, String> {
+                val sesion = Tasks.await(usuario.getIdToken(renovar), 20, TimeUnit.SECONDS).token
+                    ?: throw IllegalStateException("sin sesión")
+                // El envío solo se repite si no llegó a salir: así no se duplica el toque.
+                return reintentando(noLlegoASalir) { post(SERVIDOR, cuerpo, "application/json", sesion) }
+            }
+            var (codigo, respuesta) = intento(renovar = false)
+            if (codigo == 401) intento(renovar = true).let { codigo = it.first; respuesta = it.second }
+            if (codigo != 200) Log.w("Toques", "El servidor respondió $codigo: $respuesta")
+            when (codigo) {
+                200 -> null
+                403 -> "este celular ya no está en su libreta"
+                else -> "el servidor respondió $codigo"
+            }
+        }
     } catch (e: Exception) {
-        Log.w("Toques", "No se pudo publicar en FCM", e)
+        Log.w("Toques", "No se pudo publicar", e)
         motivo(e)
     }
-
-    private val cualquiera: (Exception) -> Boolean = { true }
 
     /** Fallos en los que el mensaje seguro no llegó a Firebase: repetir no puede duplicar el toque. */
     private val noLlegoASalir: (Exception) -> Boolean = { e ->
@@ -163,53 +187,10 @@ object Toques {
         e is UnknownHostException || e is ConnectException -> "sin conexión a internet"
         e is SocketTimeoutException -> "la conexión es muy lenta"
         e is SSLException -> "no se pudo abrir una conexión segura; revisa la hora del celular"
-        e is IllegalStateException && e.message?.startsWith("Google no dio token") == true ->
-            "Google no aceptó la llave (revisa la hora del celular)"
+        e is java.util.concurrent.ExecutionException || e is java.util.concurrent.TimeoutException ->
+            "no se pudo confirmar la sesión de la libreta"
         else -> "error inesperado"
     }
-
-    private fun llave(context: Context) =
-        JSONObject(context.assets.open("firebase-llave.json").bufferedReader().use { it.readText() })
-
-    private var token: String? = null
-    private var tokenVence = 0L
-
-    /** Token OAuth de Google (dura una hora), a partir de un JWT firmado con la llave. */
-    @Synchronized
-    private fun tokenDeAcceso(context: Context, llave: JSONObject): String {
-        token?.let { if (System.currentTimeMillis() < tokenVence) return it }
-
-        val ahora = System.currentTimeMillis() / 1000
-        val cabecera = JSONObject().put("alg", "RS256").put("typ", "JWT")
-        val datos = JSONObject()
-            .put("iss", llave.getString("client_email"))
-            .put("scope", ALCANCE)
-            .put("aud", llave.getString("token_uri"))
-            .put("iat", ahora)
-            .put("exp", ahora + 3600)
-        val sinFirma = b64(cabecera.toString().toByteArray()) + "." + b64(datos.toString().toByteArray())
-
-        val pem = llave.getString("private_key")
-            .replace("-----BEGIN PRIVATE KEY-----", "")
-            .replace("-----END PRIVATE KEY-----", "")
-            .replace("\\s".toRegex(), "")
-        val privada = KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(Base64.decode(pem, Base64.DEFAULT)))
-        val firma = Signature.getInstance("SHA256withRSA").run {
-            initSign(privada)
-            update(sinFirma.toByteArray())
-            sign()
-        }
-        val jwt = sinFirma + "." + b64(firma)
-
-        val cuerpo = "grant_type=" + URLEncoder.encode("urn:ietf:params:oauth:grant-type:jwt-bearer", "UTF-8") + "&assertion=" + jwt
-        val (codigo, respuesta) = post(llave.getString("token_uri"), cuerpo, "application/x-www-form-urlencoded", null)
-        check(codigo == 200) { "Google no dio token ($codigo): $respuesta" }
-        val json = JSONObject(respuesta)
-        tokenVence = System.currentTimeMillis() + (json.getLong("expires_in") - 60) * 1000
-        return json.getString("access_token").also { token = it }
-    }
-
-    private fun b64(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
 
     private fun post(url: String, cuerpo: String, tipo: String, token: String?): Pair<Int, String> {
         val conexion = URL(url).openConnection() as HttpURLConnection

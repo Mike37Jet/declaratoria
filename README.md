@@ -123,17 +123,26 @@ El mensaje dice el motivo: «sin conexión a internet», «la conexión es muy l
 
 ### Archivos que no están en el repo
 
-Al clonar, la app **no compila** hasta que pongas estos dos archivos de Firebase
-(están en `.gitignore` a propósito):
+Al clonar, la app **no compila** hasta que pongas este archivo de Firebase
+(está en `.gitignore` a propósito):
 
 | Archivo | Dónde va | Cómo conseguirlo |
 |---|---|---|
 | `google-services.json` | `android/app/` | Consola de Firebase → Configuración del proyecto → Tus apps → app Android `com.roguelito.rommicines` → «Descargar google-services.json» |
-| `firebase-llave.json` | `android/app/secreto/` | Consola de Firebase → Configuración del proyecto → Cuentas de servicio → «Generar nueva clave privada»; renombra el archivo descargado a `firebase-llave.json` |
 
-Sin el primero falla el build (plugin de Google Services); sin el segundo la app compila
-pero no puede enviar toques. La llave privada viaja dentro del APK, así que no compartas
-el APK con nadie más.
+### Servidor de avisos
+
+La app **no lleva la llave privada de Firebase**, así que el APK se puede compartir por link.
+Los toques y los avisos de la libreta los publica un Cloudflare Worker (`servidor/`) que guarda
+la llave y solo acepta a los miembros de la libreta. Para publicarlo o cambiar la llave:
+
+```bash
+cd servidor
+npx wrangler deploy
+npx wrangler secret put LLAVE < ruta/a/la-llave.json   # Firebase → Cuentas de servicio → Generar nueva clave privada
+```
+
+Después de guardar la llave, borra el archivo descargado.
 
 Para instalarla: abre la carpeta `android/` en Android Studio y dale ▶ con el
 celular conectado, o compila el APK y pásalo por WhatsApp o Drive:

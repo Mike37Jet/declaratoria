@@ -1,0 +1,5 @@
+# Servidor de avisos de ROMMICINES. Publicar: cd servidor && npx wrangler deploy
+# La llave de Firebase se guarda aparte, como secreto: npx wrangler secret put LLAVE
+name = "rommicines-avisos"
+main = "src/index.js"
+compatibility_date = "2026-11-01"

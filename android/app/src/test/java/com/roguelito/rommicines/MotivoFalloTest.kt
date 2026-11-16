@@ -17,14 +17,17 @@ class MotivoFalloTest {
         assertEquals("la conexión es muy lenta", Toques.motivo(SocketTimeoutException("Read timed out")))
     }
 
-    @Test fun `un fallo seguro o de token apunta a la hora del celular`() {
+    @Test fun `un fallo seguro apunta a la hora del celular`() {
         assertEquals(
             "no se pudo abrir una conexión segura; revisa la hora del celular",
             Toques.motivo(SSLException("Chain validation failed")),
         )
+    }
+
+    @Test fun `si no se pudo pedir la sesion se dice asi`() {
         assertEquals(
-            "Google no aceptó la llave (revisa la hora del celular)",
-            Toques.motivo(IllegalStateException("Google no dio token (400): invalid_grant")),
+            "no se pudo confirmar la sesión de la libreta",
+            Toques.motivo(java.util.concurrent.TimeoutException("Timed out")),
         )
     }
 

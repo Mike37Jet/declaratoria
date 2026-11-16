@@ -11,6 +11,6 @@ captures/
 app/google-services.json
 
 # Llave privada de Firebase (cuenta de servicio): nunca al repo.
-# Viaja dentro del APK desde app/secreto/, pero no se sube a GitHub.
+# Ya no viaja en el APK (la guarda el servidor de avisos); por si queda una copia local.
 app/secreto/
 *-firebase-adminsdk-*.json

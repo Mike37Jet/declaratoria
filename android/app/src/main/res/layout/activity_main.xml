@@ -60,11 +60,20 @@
                 android:textColor="@color/cream_soft"
                 android:textSize="13sp"
                 android:visibility="gone" />
-            <com.roguelito.rommicines.Renglones
-                android:id="@+id/pastillas"
+            <!-- La frase que se manda: un campo que abre la lista (antes eran pastillas). -->
+            <TextView
+                android:id="@+id/frase_toque"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" />
+                android:layout_marginTop="12dp"
+                android:background="@drawable/campo_frase"
+                android:drawableEnd="@drawable/ic_desplegar"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:paddingHorizontal="14dp"
+                android:textColor="@color/cream"
+                android:textSize="16sp" />
             <Button
                 android:id="@+id/mandar_toque"
                 style="@style/AccionPrincipal"

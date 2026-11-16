@@ -29,10 +29,11 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.ArrayAdapter
+import android.widget.ListPopupWindow
 import androidx.lifecycle.Observer
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.google.firebase.messaging.FirebaseMessaging
 import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -172,8 +173,9 @@ class MainActivity : Activity() {
     }
 
     private fun suscribir() {
-        FirebaseMessaging.getInstance().subscribeToTopic(Toques.TEMA).addOnCompleteListener(this) {
-            falloSuscripcion = !it.isSuccessful
+        Toques.suscribir(this) { bien ->
+            if (isDestroyed) return@suscribir
+            falloSuscripcion = !bien
             mostrarAvisoRecepcion()
         }
     }
@@ -268,47 +270,62 @@ class MainActivity : Activity() {
     private fun mostrarQuienEres() {
         val yo = Toques.yo(this)
         findViewById<TextView>(R.id.destinatario).text = if (yo == null) "Un toque de cariño" else "Un toque para ${Toques.otro(yo)}"
-        mostrarPastillas()
+        mostrarFrase()
         mostrarUltimoRecibido()
         mostrarEnvio()
     }
 
-    /** Las frases del toque, a la vista: la elegida va en dorado y es la misma que manda el widget. */
-    private fun mostrarPastillas() {
-        val fila = findViewById<ViewGroup>(R.id.pastillas)
-        val d = resources.displayMetrics.density
-        if (fila.childCount != TipoToque.elegibles.size) {
-            fila.removeAllViews()
-            TipoToque.elegibles.forEach { tipo ->
-                fila.addView(TextView(this).apply {
-                    text = tipo.etiqueta
-                    textSize = 14f
-                    setTextColor(getColorStateList(R.color.texto_pastilla))
-                    background = getDrawable(R.drawable.pastilla_toque)
-                    minHeight = (40 * d).toInt()
-                    gravity = Gravity.CENTER
-                    setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
-                    isClickable = true
-                    setOnClickListener {
-                        if (Toques.preferido(this@MainActivity) == tipo) return@setOnClickListener
-                        performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
-                        Toques.elegirTipo(this@MainActivity, tipo)
-                        ocultarResultado = true
-                        mostrarPastillas()
-                        mostrarEnvio()
-                        ContadorWidget.actualizarTodos(this@MainActivity)
-                    }
-                    tag = tipo
-                })
-            }
-        }
+    /** La frase del toque en un solo campo; al tocarlo se abre la lista. Es la misma que manda el widget. */
+    private fun mostrarFrase() {
         val elegido = Toques.preferido(this)
-        for (i in 0 until fila.childCount) {
-            val v = fila.getChildAt(i)
-            val tipo = v.tag as TipoToque
-            v.isSelected = tipo == elegido
-            v.contentDescription = tipo.frase + if (tipo == elegido) ", elegido" else ". Elegir esta frase"
+        findViewById<TextView>(R.id.frase_toque).apply {
+            text = elegido.etiqueta
+            contentDescription = "Frase del toque: ${elegido.frase}. Toca para cambiarla"
+            setOnClickListener { elegirFrase(this) }
         }
+    }
+
+    private fun elegirFrase(campo: View) {
+        val tipos = TipoToque.elegibles
+        val elegido = Toques.preferido(this)
+        val d = resources.displayMetrics.density
+        val lista = ListPopupWindow(this)
+        lista.anchorView = campo
+        lista.width = campo.width
+        lista.verticalOffset = (6 * d).toInt()
+        lista.isModal = true
+        lista.setBackgroundDrawable(getDrawable(R.drawable.menu_frases))
+        lista.setAdapter(object : ArrayAdapter<TipoToque>(this, 0, tipos) {
+            override fun getView(posicion: Int, vista: View?, padre: ViewGroup): View {
+                val tipo = tipos[posicion]
+                val fila = vista as? TextView ?: TextView(context).apply {
+                    textSize = 16f
+                    minHeight = (48 * d).toInt()
+                    gravity = Gravity.CENTER_VERTICAL
+                    compoundDrawablePadding = (8 * d).toInt()
+                    setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
+                }
+                return fila.apply {
+                    text = tipo.etiqueta
+                    setTextColor(getColor(if (tipo == elegido) R.color.gold_light else R.color.cream))
+                    setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, if (tipo == elegido) R.drawable.ic_marca else 0, 0)
+                    contentDescription = tipo.frase + if (tipo == elegido) ", elegida" else ""
+                }
+            }
+        })
+        lista.setOnItemClickListener { _, _, posicion, _ ->
+            lista.dismiss()
+            val tipo = tipos[posicion]
+            if (tipo == elegido) return@setOnItemClickListener
+            campo.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+            Toques.elegirTipo(this, tipo)
+            ocultarResultado = true
+            mostrarFrase()
+            mostrarEnvio()
+            ContadorWidget.actualizarTodos(this)
+        }
+        lista.show()
+        lista.setSelection(tipos.indexOf(elegido))
     }
 
     /** Lo último que llegó del otro, para que el toque se sienta conversación. */
@@ -390,7 +407,7 @@ class MainActivity : Activity() {
                 else -> "Enviar toque"
             }
         }
-        findViewById<ViewGroup>(R.id.pastillas).let { f -> for (i in 0 until f.childCount) f.getChildAt(i).isEnabled = !ocupado }
+        findViewById<View>(R.id.frase_toque).isEnabled = !ocupado
         findViewById<TextView>(R.id.estado_toque).apply {
             setTextColor(getColor(if (fallo) R.color.error_texto else R.color.cream_soft))
             text = when {

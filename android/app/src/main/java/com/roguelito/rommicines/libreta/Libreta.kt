@@ -139,6 +139,7 @@ object Libreta {
             .commit()
             .addOnSuccessListener {
                 prefs(context).edit().putString("pareja", pareja.id).putString("codigo", codigo).apply()
+                Toques.suscribir(context)
                 listo(codigo)
             }
             .addOnFailureListener { fallo(motivo(it)) }
@@ -156,6 +157,7 @@ object Libreta {
                 ))
                     .addOnSuccessListener {
                         prefs(context).edit().putString("pareja", pareja).remove("codigo").apply()
+                        Toques.suscribir(context)
                         doc.reference.delete()
                         listo()
                     }

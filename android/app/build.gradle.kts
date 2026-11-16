@@ -21,9 +21,7 @@ android {
     // Las fotos de la página (public/photos) viajan dentro de la app: son las
     // primeras del carrusel la primera vez que se abre.
     sourceSets["main"].assets.srcDir("../../public")
-    // La llave de Firebase para mandar toques. Miguel decidió llevarla dentro
-    // del APK (solo va a sus dos celulares); no se sube a GitHub (ver .gitignore).
-    sourceSets["main"].assets.srcDir("secreto")
+    // La llave de Firebase ya no viaja en el APK: la guarda el servidor de avisos (../servidor).
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

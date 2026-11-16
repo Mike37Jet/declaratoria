@@ -51,12 +51,12 @@ Las preguntas dentro de la libreta van en una notita de papel (`nota()`), no en 
 En la libreta **no se usan emojis**: los íconos son de trazo, de Phosphor Icons (light, MIT) pasados a
 `res/drawable/ic_libreta_*.xml` (licencia en `res/raw/phosphor_licencia.txt`). Los toques sí llevan emoji (`TipoToque`).
 Pulsación larga: en un plan sin tachar, corregirlo o borrarlo (`corregir()`); en uno tachado, quitar el tachón.
-Los **avisos** de la libreta (`AvisosLibreta.kt`) viajan por el mismo tema `toques` con `"clase":"libreta"`
+Los **avisos** de la libreta (`AvisosLibreta.kt`) viajan por el mismo tema de la pareja con `"clase":"libreta"`
 y el id de la pareja (sin campo `nombre`, para que un APK viejo no los tome por toque); cada celular descarta
 los de otra pareja y los suyos. Para probar en el emulador sin mandar nada: modo avión + prefs falsas.
 
 La **pantalla principal** es una taquilla de cine ([Taquilla.kt](android/app/src/main/java/com/roguelito/rommicines/Taquilla.kt):
-`Marquesina`, `Boleto`, `Renglones`): las frases del toque van como pastillas (`TipoToque.elegibles`), los recuerdos
+`Marquesina`, `Boleto`): la frase del toque se elige en un campo que abre una lista (`TipoToque.elegibles`), los recuerdos
 en una tira de película horizontal y la «cartelera» lee la misma copia local que el widget de la libreta.
 El último toque recibido se guarda aparte (`Toques.ultimoRecibido`). El nombre se cambia desde Ayuda.
 
@@ -75,12 +75,16 @@ Las fotos de la página (`0000000000000-…`) no se suben: vienen en la app. Sol
 
 - **La fecha del "sí" está duplicada**: `OFFICIAL_YES_DATE` en `src/config.ts` y `DESDE` en
   `android/.../Juntos.kt`. Si cambia una, cambia la otra. Lo mismo con la URL de la página.
-- **Los toques son reales.** Enviar un toque desde el emulador publica en el tema `toques` de
-  Firebase y le puede llegar a Mimina. Antes de probar el botón de enviar, avisa al usuario.
-- **Al clonar faltan dos archivos de Firebase** (están en `.gitignore`): `android/app/google-services.json`
-  y la llave de abajo. Sin el primero no compila. Cómo conseguirlos: README, «Archivos que no están en el repo».
-- **Llave de Firebase**: `android/app/secreto/firebase-llave.json` viaja dentro del APK y está
-  en `.gitignore`. Nunca leerla, imprimirla ni subirla (un hook lo bloquea).
+- **Los toques son reales.** La app no lleva la llave de Firebase: toques y avisos se piden al
+  **servidor de avisos** (`servidor/`, Cloudflare Worker `rommicines-avisos.rommicines.workers.dev`),
+  que comprueba con la sesión del celular que es miembro de la pareja y publica en el tema
+  `pareja-<id>` (`Toques.tema`). El tema viejo `toques` ya no se usa. Antes de probar enviar, avisa al usuario;
+  en el emulador se prueba con una libreta propia (nadie más escucha su tema).
+- **Publicar el servidor:** `cd servidor && npx wrangler deploy`. La llave vive como secreto `LLAVE`
+  en Cloudflare (`npx wrangler secret put LLAVE < archivo`, lo corre el usuario). Nunca leerla.
+- **Al clonar falta** `android/app/google-services.json` (está en `.gitignore`); sin él no compila.
+  Cómo conseguirlo: README, «Archivos que no están en el repo».
+- **Llaves de Firebase**: ninguna va en el repo ni en el APK. Nunca leerlas, imprimirlas ni subirlas (un hook lo bloquea).
 - **No reactivar `RescheduleReceiver` de WorkManager.** Está quitado en el manifiesto a
   propósito: activarlo/desactivarlo en cada envío hacía parpadear los widgets.
 - **Reinstalar el APK borra los widgets del launcher** del emulador; hay que volver a ponerlos.
