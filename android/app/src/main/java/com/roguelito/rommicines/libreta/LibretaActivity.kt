@@ -38,6 +38,9 @@ class LibretaActivity : Activity() {
     private var cuenta: TextView? = null
     private var estado: TextView? = null
     private var hoja: ScrollView? = null
+    private var hojaPapel: HojaDrawable? = null
+    private var pagina: PaginaView? = null
+    private var escuchaManchas: ListenerRegistration? = null
     private val vistas = mutableMapOf<String, PlanView>()
     private val porEscribir = mutableListOf<PlanView>()
     private var hechos = -1
@@ -94,7 +97,7 @@ class LibretaActivity : Activity() {
     private fun mostrar() {
         escritorio.removeAllViews()
         atrasCierraTapa(false)
-        tapa = null; planes = null; contador = null; cuenta = null; estado = null; hoja = null; capa = null
+        tapa = null; hojaPapel = null; pagina = null; planes = null; contador = null; cuenta = null; estado = null; hoja = null; capa = null
         vistas.clear(); porEscribir.clear(); hechos = -1
         when {
             Toques.yo(this) == null -> tarjeta(
@@ -109,14 +112,18 @@ class LibretaActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
+        AvisosLibreta.libretaAbierta = true
+        AvisosLibreta.limpiar(this)
         escuchar()
     }
 
     override fun onStop() {
         super.onStop()
+        AvisosLibreta.libretaAbierta = false
         escuchaPlanes?.remove(); escuchaPlanes = null
         escuchaMiembros?.remove(); escuchaMiembros = null
         escuchaRecuerdos?.remove(); escuchaRecuerdos = null
+        escuchaManchas?.remove(); escuchaManchas = null
     }
 
     override fun onDestroy() {
@@ -223,9 +230,11 @@ class LibretaActivity : Activity() {
     // --- La libreta abierta -----------------------------------------------------------
 
     private fun libreta() {
-        val pagina = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = HojaDrawable(this@LibretaActivity)
+        val papel = HojaDrawable(this).apply { semilla = Libreta.pareja(this@LibretaActivity).hashCode() }
+        hojaPapel = papel
+        val pagina = PaginaView(this, papel).apply {
+            alLimpiar = { n -> Libreta.limpiarMancha(this@LibretaActivity, n) }
+            this@LibretaActivity.pagina = this
             setPadding(0, 0, 0, (linea * 3).toInt())
             clipChildren = false
         }
@@ -256,7 +265,7 @@ class LibretaActivity : Activity() {
         // Sin recorte: el sello cae desde más grande y sobresale un instante del renglón.
         planes = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; clipChildren = false }
         pagina.addView(planes)
-        pagina.addView(escribir(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, linea.toInt()))
+        pagina.addView(renglonNuevo(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, linea.toInt()))
         estado = letra("", 18f, R.color.tinta_suave).apply { setPadding(margen, dp(4), dp(20), 0); visibility = View.GONE }
         pagina.addView(estado)
 
@@ -270,7 +279,10 @@ class LibretaActivity : Activity() {
         marco.addView(hoja)
         val t = TapaView(this).apply {
             firma = "${Toques.ROGUELITO} & ${Toques.MIMINA}"
-            alCambiar = { abierta -> atrasCierraTapa(abierta); if (abierta) escribirPendientes() }
+            alCambiar = { abierta ->
+                atrasCierraTapa(abierta)
+                if (abierta) escribirPendientes()
+            }
         }
         tapa = t
         marco.addView(t)
@@ -279,9 +291,38 @@ class LibretaActivity : Activity() {
         })
     }
 
-    /** El renglón en blanco al final: se escribe con el teclado, pero con tu tinta. */
-    private fun escribir(): EditText = EditText(this).apply {
-        val tinta = getColor(Libreta.tinta(this@LibretaActivity).color)
+    /** El renglón en blanco al final: el campo, el clip (para proponer) y el lapicero. */
+    private fun renglonNuevo(): LinearLayout {
+        val tinta = getColor(Libreta.tinta(this).color)
+        val campo = escribir(tinta)
+        val clip = BotonClip(this)
+        val lapicero = BotonLapicero(this, tinta)
+        fun ponerLetra(l: Lapicero) { campo.typeface = if (l.negrita) Papel.letraNegrita(this) else Papel.letra(this) }
+        ponerLetra(lapicero.lapicero)
+        lapicero.alCambiar = ::ponerLetra
+        clip.alCambiar = { puesto -> campo.hint = if (puesto) "+ proponer un plan…" else "+ escribir un plan…" }
+        campo.setOnEditorActionListener { _, accion, _ ->
+            if (accion != EditorInfo.IME_ACTION_DONE) return@setOnEditorActionListener false
+            val texto = campo.text.toString().trim()
+            if (texto.isNotEmpty()) {
+                Libreta.agregar(this, texto, propuesta = clip.puesto)
+                campo.text = null
+                // El clip es para una sola propuesta: luego se vuelve a escribir normal.
+                if (clip.puesto) { clip.puesto = false; clip.alCambiar?.invoke(false) }
+                hoja?.post { hoja?.fullScroll(View.FOCUS_DOWN); campo.requestFocus() }
+            }
+            true
+        }
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(campo, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+            addView(clip, LinearLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.MATCH_PARENT))
+            addView(lapicero, LinearLayout.LayoutParams(dp(44), ViewGroup.LayoutParams.MATCH_PARENT).apply { rightMargin = dp(10) })
+        }
+    }
+
+    /** El campo se escribe con el teclado, pero con tu tinta. */
+    private fun escribir(tinta: Int): EditText = EditText(this).apply {
         background = null
         typeface = Papel.letra(this@LibretaActivity)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, Papel.LETRA_SP)
@@ -296,17 +337,7 @@ class LibretaActivity : Activity() {
         gravity = Gravity.BOTTOM or Gravity.START
         // Que la letra caiga sobre la raya igual que los planes ya escritos.
         val descenso = paint.fontMetrics.descent
-        setPadding(margen, 0, dp(20), (dp(8) - descenso).toInt().coerceAtLeast(0))
-        setOnEditorActionListener { campo, accion, _ ->
-            if (accion != EditorInfo.IME_ACTION_DONE) return@setOnEditorActionListener false
-            val texto = campo.text.toString().trim()
-            if (texto.isNotEmpty()) {
-                Libreta.agregar(this@LibretaActivity, texto)
-                campo.text = null
-                hoja?.post { hoja?.fullScroll(View.FOCUS_DOWN); campo.requestFocus() }
-            }
-            true
-        }
+        setPadding(margen, 0, dp(4), (dp(8) - descenso).toInt().coerceAtLeast(0))
     }
 
     private fun escuchar() {
@@ -317,6 +348,8 @@ class LibretaActivity : Activity() {
         escuchaMiembros?.remove()
         escuchaRecuerdos?.remove()
         escuchaRecuerdos = Album.escuchar(pareja) { lista -> conRecuerdo = lista.map { it.id }.toSet() }
+        escuchaManchas?.remove()
+        escuchaManchas = Libreta.escucharManchas(pareja) { limpias -> hojaPapel?.limpias = limpias }
         escuchaMiembros = Libreta.escucharMiembros(pareja) { n ->
             val codigo = Libreta.codigo(this)
             if (n < 2 && codigo != null) mensaje("Falta ${Toques.otro(Toques.yo(this))}: su código es ${Codigos.mostrar(codigo)}", error = false)
@@ -335,7 +368,7 @@ class LibretaActivity : Activity() {
         lista.forEachIndexed { i, plan ->
             val vista = vistas[plan.id]
             if (vista == null) {
-                val nueva = PlanView(this, plan).apply { alTachar = ::tachar; alTocar = ::abrirRecuerdo }
+                val nueva = PlanView(this, plan).apply { alTachar = ::tachar; alTocar = ::abrirRecuerdo; alFirmar = ::firmar }
                 vistas[plan.id] = nueva
                 contenedor.addView(nueva, i)
                 if (plan.autor != yo && !Libreta.visto(this, plan.id)) {
@@ -353,6 +386,7 @@ class LibretaActivity : Activity() {
         val n = lista.count { it.hecho != null }
         contador?.mostrar(n, animar = abierta && hechos >= 0 && n == hechos + 1)
         cuenta?.text = "$n de ${Libreta.META}"
+        hojaPapel?.manchas = Libreta.manchas(n)
         hechos = n
     }
 
@@ -374,12 +408,23 @@ class LibretaActivity : Activity() {
             }, 900)
             return
         }
-        AlertDialog.Builder(this)
-            .setTitle("¿Quitar el tachado?")
-            .setMessage("«${plan.texto}» volverá a quedar pendiente.")
-            .setPositiveButton("Quitar") { _, _ -> Libreta.tachar(this, plan, false) }
-            .setNegativeButton("Dejarlo", null)
-            .show()
+        nota("¿Lo borramos?", "«${plan.texto}» vuelve a quedar pendiente, sin sello.", "Sí, borrar el tachón", "Dejarlo así") {
+            Libreta.tachar(this, plan, false)
+        }
+    }
+
+    /** Una propuesta la firma el otro; quien la propuso solo puede esperar. */
+    private fun firmar(plan: Plan) {
+        val otro = Toques.otro(Toques.yo(this))
+        if (plan.autor == Libreta.yo()) {
+            val texto = "Falta que $otro la firme 📎"
+            mensaje(texto, error = false)
+            escritorio.postDelayed({ if (estado?.text == texto) mensaje("") }, 3000)
+            return
+        }
+        nota("¿Lo firmas?", "«${plan.texto}»\nCon tu firma queda como plan de los dos.", "Firmar ✍️", "Todavía no") {
+            Libreta.firmar(this, plan)
+        }
     }
 
     // --- El álbum ---------------------------------------------------------------------
@@ -486,6 +531,11 @@ class LibretaActivity : Activity() {
         })
         tarjeta.addView(letra("Puedes pegarla después tocando el plan tachado.", 17f, R.color.tinta_guia).apply { gravity = Gravity.CENTER })
 
+        mostrarCapa(tarjeta)
+    }
+
+    /** Pone una hoja suelta encima de la libreta, con el escritorio oscurecido detrás. */
+    private fun mostrarCapa(tarjeta: View) {
         val desplazable = ScrollView(this).apply {
             isFillViewport = true
             isVerticalScrollBarEnabled = false
@@ -513,6 +563,35 @@ class LibretaActivity : Activity() {
             tarjeta.alpha = 0f
             tarjeta.animate().translationY(0f).alpha(1f).setDuration(260).setInterpolator(Papel.salida).start()
         }
+    }
+
+    /**
+     * Una notita de papel para preguntar algo (en vez del diálogo gris del sistema):
+     * título a mano, el plan entre comillas y dos respuestas.
+     */
+    private fun nota(titulo: String, texto: String, si: String, no: String, accion: () -> Unit) {
+        if (capa != null) return
+        val tarjeta = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = HojaDrawable(this@LibretaActivity)
+            elevation = dp(10).toFloat()
+            setPadding(margen + dp(4), linea.toInt(), dp(20), dp(14))
+            rotation = 1.2f
+            isClickable = true
+        }
+        tarjeta.addView(letra(titulo, 28f, R.color.tinta_lapiz, negrita = true))
+        tarjeta.addView(letra(texto, 20f, R.color.tinta_suave).apply {
+            (layoutParams as ViewGroup.MarginLayoutParams).topMargin = dp(4)
+        })
+        tarjeta.addView(boton(si) { cerrarCapa(); accion() })
+        tarjeta.addView(letra(no, 19f, R.color.tinta_suave, negrita = true).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            gravity = Gravity.CENTER
+            minHeight = dp(48)
+            isClickable = true
+            setOnClickListener { cerrarCapa() }
+        })
+        mostrarCapa(tarjeta)
     }
 
     private fun cerrarCapa() {

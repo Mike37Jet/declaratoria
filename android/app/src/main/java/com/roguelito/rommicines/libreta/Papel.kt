@@ -72,6 +72,43 @@ class HojaDrawable(context: Context) : Drawable() {
     private val renglon = Paint().apply { color = context.getColor(R.color.renglon); strokeWidth = Papel.dp(context, 1f) }
     private val rojo = Paint().apply { color = context.getColor(R.color.margen); strokeWidth = Papel.dp(context, 1.5f) }
 
+    private val d = Papel.dp(context, 1f)
+    private val cafe = context.getColor(R.color.cafe)
+    private val aro = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
+    private val charco = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    /** Manchas de taza de café: aparecen con el uso. La semilla (la pareja) las deja siempre en su sitio. */
+    var manchas = 0
+        set(v) { if (field != v) { field = v; invalidateSelf() } }
+    var semilla = 0
+
+    /** Las que ya se limpiaron (no se dibujan) y cuánto se lleva frotada cada una (0..1). */
+    var limpias: Set<Int> = emptySet()
+        set(v) { if (field != v) { field = v; invalidateSelf() } }
+    private val frotada = mutableMapOf<Int, Float>()
+
+    data class Mancha(val numero: Int, val cx: Float, val cy: Float, val r: Float)
+
+    /** Las manchas que se ven ahora, con su sitio (para saber si el dedo está encima). */
+    fun visibles(): List<Mancha> = (0 until manchas).filter { it !in limpias }.map { lugar(it) }
+
+    fun frotar(numero: Int, cuanto: Float): Float {
+        val v = ((frotada[numero] ?: 0f) + cuanto).coerceIn(0f, 1f)
+        frotada[numero] = v
+        invalidateSelf()
+        return v
+    }
+
+    private fun lugar(i: Int): Mancha {
+        val azar = java.util.Random(semilla * 31L + i * 977L)
+        val b = bounds
+        val r = (30 + azar.nextFloat() * 12) * d
+        val alto = minOf(b.height().toFloat(), 760 * d)
+        val cx = b.left + b.width() * (0.3f + azar.nextFloat() * 0.6f)
+        val cy = b.top + linea * 3 + (alto - linea * 3 - r) * azar.nextFloat()
+        return Mancha(i, cx, cy, r)
+    }
+
     override fun draw(canvas: Canvas) {
         val b = bounds
         canvas.drawColor(fondo)
@@ -81,6 +118,41 @@ class HojaDrawable(context: Context) : Drawable() {
             y += linea
         }
         canvas.drawLine(b.left + margen, b.top.toFloat(), b.left + margen, b.bottom.toFloat(), rojo)
+        for (i in 0 until manchas) if (i !in limpias) mancha(canvas, i)
+    }
+
+    /** El aro que deja el fondo de una taza: irregular, más oscuro en el borde y abierto donde se levantó. */
+    private fun mancha(canvas: Canvas, i: Int) {
+        val azar = java.util.Random(semilla * 31L + i * 977L)
+        repeat(3) { azar.nextFloat() } // los mismos tres números que gastó lugar()
+        val (_, cx, cy, r) = lugar(i)
+        // Frotada se va aclarando; nunca del todo hasta que se da por limpia.
+        val queda = 1f - (frotada[i] ?: 0f) * 0.85f
+        val giro = azar.nextFloat() * 360f
+        val fase = azar.nextFloat() * 6.28f
+        fun borde(radio: Float, desde: Float, hasta: Float): Path = Path().apply {
+            var a = desde
+            var primero = true
+            while (a <= hasta) {
+                val t = Math.toRadians((a + giro).toDouble())
+                val rr = radio * (1f + 0.035f * kotlin.math.sin(3 * t + fase).toFloat() + 0.02f * kotlin.math.sin(7 * t).toFloat())
+                val px = cx + rr * kotlin.math.cos(t).toFloat(); val py = cy + rr * kotlin.math.sin(t).toFloat()
+                if (primero) moveTo(px, py) else lineTo(px, py)
+                primero = false
+                a += 6f
+            }
+        }
+        charco.color = cafe; charco.alpha = (14 * queda).toInt()
+        canvas.drawPath(borde(r * 0.97f, 0f, 360f).apply { close() }, charco)
+        aro.color = cafe
+        aro.alpha = (72 * queda).toInt(); aro.strokeWidth = 2.4f * d
+        canvas.drawPath(borde(r, 0f, 300f + azar.nextFloat() * 40f), aro)
+        aro.alpha = (32 * queda).toInt(); aro.strokeWidth = 1.2f * d
+        canvas.drawPath(borde(r * 0.9f, 40f, 250f), aro)
+        // Una gota que cayó al lado.
+        charco.alpha = (40 * queda).toInt()
+        val t = Math.toRadians(giro + 200.0)
+        canvas.drawCircle(cx + r * 1.35f * kotlin.math.cos(t).toFloat(), cy + r * 1.35f * kotlin.math.sin(t).toFloat(), 2.6f * d, charco)
     }
 
     override fun setAlpha(alpha: Int) {}

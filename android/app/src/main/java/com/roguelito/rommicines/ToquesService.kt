@@ -15,6 +15,8 @@ import java.util.UUID
 class ToquesService : FirebaseMessagingService() {
 
     override fun onMessageReceived(mensaje: RemoteMessage) {
+        // La libreta usa el mismo tema: sus avisos se atienden aparte y nunca cuentan como toque.
+        if (com.roguelito.rommicines.libreta.AvisosLibreta.recibir(this, mensaje.data)) return
         val toque = MensajeToque.paraEsteCelular(mensaje.data, Toques.idCelular(this)) ?: return
 
         Toques.registrar(this, recibido = true, nombre = toque.nombre, tipo = toque.tipo)

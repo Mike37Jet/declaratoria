@@ -22,7 +22,27 @@ data class Plan(
     val orden: Long,
     val hecho: Long?,
     val hechoPor: String?,
-)
+    /** Una propuesta lleva clip hasta que el otro la firma; mientras, no se puede tachar. */
+    val propuesta: Boolean = false,
+    val firmadaPor: String? = null,
+    val firma: String? = null, // el nombre con que se firmó
+    val lapicero: Lapicero = Lapicero.BOLIGRAFO,
+) {
+    val porFirmar get() = propuesta && firmadaPor == null
+}
+
+/** Con qué escribe cada uno. El color es de la persona; el lapicero cambia el trazo. */
+enum class Lapicero(val nombre: String, val grosor: Float, val negrita: Boolean) {
+    BOLIGRAFO("Bolígrafo", 2.6f, false),
+    PLUMON("Plumón", 4.4f, true),
+    PLUMA("Pluma fuente", 1.9f, false);
+
+    val codigo get() = name.lowercase()
+
+    companion object {
+        fun de(codigo: String?): Lapicero = entries.firstOrNull { it.codigo == codigo } ?: BOLIGRAFO
+    }
+}
 
 /** Cada uno escribe con su tinta: así se nota quién escribió qué sin poner nombres. */
 enum class Tinta(val color: Int) {
@@ -33,6 +53,9 @@ enum class Tinta(val color: Int) {
         fun de(nombre: String?): Tinta = if (nombre == "rosa") ROSA else AZUL
         fun dePersona(nombre: String?): Tinta = if (nombre == Toques.MIMINA) ROSA else AZUL
     }
+
+    /** La tinta del otro: en una libreta de dos, quien firma es quien no escribió. */
+    fun otra() = if (this == AZUL) ROSA else AZUL
 }
 
 /** El código de 6 letras para unir el segundo celular. Sin letras que se confundan (0/O, 1/I/L). */
@@ -75,6 +98,12 @@ object Libreta {
     /** El nombre de quien usa este celular (se elige en la pantalla principal). */
     fun nombre(context: Context): String? = Toques.yo(context)
     fun tinta(context: Context): Tinta = Tinta.dePersona(nombre(context))
+
+    /** Cuántas manchas de café tiene ya la hoja: la libreta se va usando. */
+    fun manchas(hechos: Int) = listOf(3, 10, 20).count { hechos >= it }
+
+    fun lapicero(context: Context): Lapicero = Lapicero.de(prefs(context).getString("lapicero", null))
+    fun elegirLapicero(context: Context, l: Lapicero) = prefs(context).edit().putString("lapicero", l.codigo).apply()
 
     /** Los planes del otro se "escriben" frente a ti solo la primera vez que los ves. */
     fun visto(context: Context, plan: String) = plan in prefs(context).getStringSet("vistos", emptySet())!!
@@ -155,21 +184,55 @@ object Libreta {
                         orden = d.getLong("orden") ?: 0,
                         hecho = d.getLong("hecho"),
                         hechoPor = d.getString("hechoPor"),
+                        propuesta = d.getBoolean("propuesta") == true,
+                        firmadaPor = d.getString("firmadaPor"),
+                        firma = d.getString("firma"),
+                        lapicero = Lapicero.de(d.getString("lapicero")),
                     )
                 })
             }
 
-    fun agregar(context: Context, texto: String) {
+    /** Las manchas de café que ya se limpiaron (por su número). Viven en parejas/{p}/hoja/manchas. */
+    fun escucharManchas(pareja: String, cambio: (Set<Int>) -> Unit): ListenerRegistration =
+        db.collection("parejas").document(pareja).collection("hoja").document("manchas")
+            .addSnapshotListener { doc, _ ->
+                cambio((doc?.get("limpias") as? List<*>)?.mapNotNull { (it as? Number)?.toInt() }?.toSet() ?: emptySet())
+            }
+
+    /** Limpiar una mancha la quita en los dos celulares; no vuelve (la próxima es otra). */
+    fun limpiarMancha(context: Context, numero: Int) {
         val pareja = pareja(context) ?: return
-        db.collection("parejas").document(pareja).collection("planes").add(mapOf(
-            "texto" to texto.trim().take(MAX_TEXTO),
+        db.collection("parejas").document(pareja).collection("hoja").document("manchas")
+            .set(mapOf("limpias" to FieldValue.arrayUnion(numero)), com.google.firebase.firestore.SetOptions.merge())
+    }
+
+    fun agregar(context: Context, texto: String, propuesta: Boolean = false) {
+        val pareja = pareja(context) ?: return
+        val limpio = texto.trim().take(MAX_TEXTO)
+        val doc = db.collection("parejas").document(pareja).collection("planes").document()
+        doc.set(mapOf(
+            "texto" to limpio,
             "autor" to (yo() ?: ""),
             "tinta" to tinta(context).name.lowercase(),
+            "lapicero" to lapicero(context).codigo,
+            "propuesta" to propuesta,
             "orden" to System.currentTimeMillis(),
             "creado" to FieldValue.serverTimestamp(),
             "hecho" to null,
             "hechoPor" to null,
         ))
+        AvisosLibreta.enviar(context, if (propuesta) Evento.PROPUESTA else Evento.PLAN, doc.id, limpio)
+    }
+
+    /** Firmar la propuesta del otro: deja de ser propuesta y ya se puede tachar. */
+    fun firmar(context: Context, plan: Plan) {
+        val pareja = pareja(context) ?: return
+        db.collection("parejas").document(pareja).collection("planes").document(plan.id).update(mapOf(
+            "firmadaPor" to (yo() ?: ""),
+            "firma" to (nombre(context) ?: ""),
+            "firmada" to System.currentTimeMillis(),
+        ))
+        AvisosLibreta.enviar(context, Evento.FIRMA, plan.id, plan.texto)
     }
 
     fun tachar(context: Context, plan: Plan, hecho: Boolean) {
@@ -178,6 +241,7 @@ object Libreta {
             "hecho" to if (hecho) System.currentTimeMillis() else null,
             "hechoPor" to if (hecho) yo() else null,
         ))
+        if (hecho) AvisosLibreta.enviar(context, Evento.HECHO, plan.id, plan.texto)
     }
 
     const val MAX_TEXTO = 120

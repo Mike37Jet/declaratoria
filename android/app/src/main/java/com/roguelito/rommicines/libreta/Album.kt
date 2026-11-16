@@ -78,6 +78,7 @@ object Album {
             "foto" to Blob.fromBytes(foto),
             "creado" to FieldValue.serverTimestamp(),
         )).addOnFailureListener { Log.w("Album", "No se pudo pegar el recuerdo", it) }
+        AvisosLibreta.enviar(context, Evento.RECUERDO, plan.id, plan.texto)
     }
 
     /** Las fotos ya abiertas, para no decodificarlas otra vez al pasar las páginas. */

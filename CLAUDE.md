@@ -43,6 +43,15 @@ foto + una línea y queda en `parejas/{p}/recuerdos/{idDelPlan}`. La foto va **d
 como Blob JPEG ≤ 200 KB (`Album.LIMITE`), porque Cloud Storage exige el plan Blaze. El Nº del boleto
 es el orden en que se tachó (`Album.numeroDeBoleto`).
 
+Etapa 3 de la libreta: una **propuesta** (clip en el renglón nuevo, `Estuche.kt`) lleva clip y «firma:» hasta
+que el otro la firma; mientras, no se puede tachar. Cada uno elige **lapicero** (bolígrafo, plumón, pluma; se
+guarda en las prefs «libreta»). Las **manchas de café** salen al llevar 3, 10 y 20 planes hechos (`Libreta.manchas`)
+y se limpian frotando de lado a lado (`PaginaView`); las limpias quedan en `parejas/{p}/hoja/manchas`.
+Las preguntas dentro de la libreta van en una notita de papel (`nota()`), no en `AlertDialog`.
+Los **avisos** de la libreta (`AvisosLibreta.kt`) viajan por el mismo tema `toques` con `"clase":"libreta"`
+y el id de la pareja (sin campo `nombre`, para que un APK viejo no los tome por toque); cada celular descarta
+los de otra pareja y los suyos. Para probar en el emulador sin mandar nada: modo avión + prefs falsas.
+
 «Nuestros recuerdos» (pantalla principal y widget carrusel) se comparte cuando la libreta está
 vinculada ([FotosCompartidas.kt](android/app/src/main/java/com/roguelito/rommicines/FotosCompartidas.kt)):
 la lista liviana en `parejas/{p}/fotos` y cada foto aparte en `fotosDatos` (se baja una sola vez).

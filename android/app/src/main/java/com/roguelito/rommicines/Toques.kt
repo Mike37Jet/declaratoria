@@ -87,14 +87,19 @@ object Toques {
      * Manda un toque al otro celular. Hace red: no llamar desde el hilo principal.
      * Devuelve null si salió bien, o el motivo del fallo en palabras para mostrarle a quien lo mandó.
      */
-    fun enviar(context: Context, tipo: TipoToque = preferido(context), para: String? = null): String? = try {
+    fun enviar(context: Context, tipo: TipoToque = preferido(context), para: String? = null): String? {
         val yo = yo(context) ?: return "falta elegir quién usa este celular"
+        return publicar(context, MensajeToque(idCelular(context), yo, tipo, para).datos())
+    }
+
+    /** Publica [datos] en el tema de los dos celulares. Hace red. Null si salió bien, o el motivo. */
+    fun publicar(context: Context, datos: Map<String, String>, ttl: String = "3600s"): String? = try {
         val mensaje = JSONObject().put(
             "message",
             JSONObject()
                 .put("topic", TEMA)
-                .put("data", JSONObject(MensajeToque(idCelular(context), yo, tipo, para).datos()))
-                .put("android", JSONObject().put("priority", "high").put("ttl", "3600s")),
+                .put("data", JSONObject(datos))
+                .put("android", JSONObject().put("priority", "high").put("ttl", ttl)),
         )
         val llave = llave(context)
         val url = "https://fcm.googleapis.com/v1/projects/${llave.getString("project_id")}/messages:send"
@@ -104,7 +109,7 @@ object Toques {
         if (codigo != 200) Log.w("Toques", "FCM respondió $codigo: $respuesta")
         if (codigo == 200) null else "Firebase respondió $codigo"
     } catch (e: Exception) {
-        Log.w("Toques", "No se pudo mandar el toque", e)
+        Log.w("Toques", "No se pudo publicar en FCM", e)
         motivo(e)
     }
 

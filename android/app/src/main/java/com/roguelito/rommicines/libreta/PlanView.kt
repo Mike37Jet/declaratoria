@@ -7,6 +7,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PathMeasure
+import android.graphics.RectF
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -41,6 +42,8 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     var alTachar: ((Plan, Boolean) -> Unit)? = null
     /** Tocar un plan ya tachado abre su página del álbum. */
     var alTocar: ((Plan) -> Unit)? = null
+    /** Tocar una propuesta sin firmar (la libreta decide si quien toca puede firmarla). */
+    var alFirmar: ((Plan) -> Unit)? = null
 
     private val linea = Papel.linea(context)
     private val margen = Papel.margen(context)
@@ -48,14 +51,54 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     private val semilla = plan.id.hashCode()
 
     private val letra = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        typeface = Papel.letra(context)
+        typeface = if (plan.lapicero.negrita) Papel.letraNegrita(context) else Papel.letra(context)
         textSize = Papel.sp(context, Papel.LETRA_SP)
     }
     private val raya = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = Papel.dp(context, 2.6f)
+        strokeWidth = Papel.dp(context, plan.lapicero.grosor)
         strokeCap = Paint.Cap.ROUND
     }
+    private val gota = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    // --- Propuesta: clip, renglón de firma y la firma del otro ---
+    /** Espacio a la derecha para la firma (solo en propuestas). */
+    private val reserva = if (plan.propuesta) Papel.dp(context, 104f) else 0f
+    private val alambre = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = Papel.dp(context, 1.8f)
+        strokeCap = Paint.Cap.ROUND
+        color = context.getColor(R.color.clip)
+    }
+    private val brillo = Paint(alambre).apply { strokeWidth = Papel.dp(context, 0.7f); color = 0x99FFFFFF.toInt() }
+    private val clip = Path().apply {
+        val d = Papel.dp(context, 1f)
+        moveTo(10 * d, 24 * d); lineTo(10 * d, 6 * d)
+        arcTo(RectF(2 * d, 2 * d, 10 * d, 10 * d), 0f, -180f, false)
+        lineTo(2 * d, 28 * d)
+        arcTo(RectF(2 * d, 25 * d, 8 * d, 31 * d), 180f, -180f, false)
+        lineTo(8 * d, 10 * d)
+    }
+    private val guia = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getColor(R.color.tinta_guia)
+        typeface = Papel.letra(context)
+        textSize = Papel.sp(context, 15f)
+    }
+    private val punteado = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getColor(R.color.tinta_guia)
+        style = Paint.Style.STROKE
+        strokeWidth = Papel.dp(context, 1f)
+        pathEffect = android.graphics.DashPathEffect(floatArrayOf(Papel.dp(context, 3f), Papel.dp(context, 3f)), 0f)
+    }
+    private val letraFirma = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = Papel.letraNegrita(context)
+        textSize = Papel.sp(context, 21f)
+    }
+    /** 0..1: la firma escribiéndose. */
+    private var firmado = if (plan.firmadaPor != null) 1f else 0f
+    /** 0..1: el clip soltándose (1 = ya no está). */
+    private var sinClip = if (plan.firmadaPor != null) 1f else 0f
+    private var firmaAnim: ValueAnimator? = null
     private val tintaSello = context.getColor(R.color.sello)
     private val sello = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = tintaSello
@@ -100,10 +143,29 @@ class PlanView(context: Context, plan: Plan) : View(context) {
         plan = nuevo
         contentDescription = nuevo.texto
         if (antes.texto != nuevo.texto) { texto = null; requestLayout() }
+        if (antes.firmadaPor == null && nuevo.firmadaPor != null) firmar(animar)
         val hecho = nuevo.hecho != null
         if (hecho == (antes.hecho != null)) return invalidate()
         // Lo tachó el otro (o se deshizo): la raya se dibuja sola, sin vibrar aquí.
         if (hecho) completar(animar, conVibracion = false) else quitar(animar)
+    }
+
+    /** La firma se escribe de izquierda a derecha y después el clip se suelta y se va. */
+    private fun firmar(animar: Boolean) {
+        firmaAnim?.cancel()
+        if (!animar || !Papel.conMovimiento()) { firmado = 1f; sinClip = 1f; invalidate(); return }
+        firmado = 0f; sinClip = 0f
+        firmaAnim = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1000
+            addUpdateListener {
+                val t = it.animatedFraction
+                firmado = (t / 0.62f).coerceIn(0f, 1f) // la mano firma a ritmo parejo
+                sinClip = Papel.salida.getInterpolation(((t - 0.62f) / 0.38f).coerceIn(0f, 1f))
+                invalidate()
+            }
+            start()
+        }
+        performHapticFeedback(HapticFeedbackConstants.CONFIRM)
     }
 
     /** La primera vez que ves un plan que escribió el otro: la tinta corre de izquierda a derecha. */
@@ -129,7 +191,7 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     }
 
     private fun armar(ancho: Int) {
-        val util = (ancho - margen - derecha).toInt().coerceAtLeast(1)
+        val util = (ancho - margen - derecha - reserva).toInt().coerceAtLeast(1)
         if (texto?.width == util) return
         texto = StaticLayout.Builder.obtain(plan.texto, 0, plan.texto.length, letra, util)
             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
@@ -153,8 +215,12 @@ class PlanView(context: Context, plan: Plan) : View(context) {
         val t = texto ?: return
         val color = context.getColor(plan.tinta.color)
         letra.color = color
-        // Un plan cumplido se queda en la hoja, pero un poco más gastado.
-        letra.alpha = if (tachado >= 1f) 165 else 255
+        // Un plan cumplido se queda en la hoja, pero un poco más gastado; una propuesta, más tenue.
+        letra.alpha = when {
+            tachado >= 1f -> 165
+            plan.porFirmar -> 205
+            else -> 255
+        }
 
         // La letra, renglón por renglón, cada uno sobre su raya.
         val porRenglon = 1f / t.lineCount
@@ -169,6 +235,16 @@ class PlanView(context: Context, plan: Plan) : View(context) {
             canvas.drawText(plan.texto, inicio, fin, margen, base, letra)
             canvas.restore()
         }
+
+        // La pluma fuente deja una gotita donde se levantó al terminar de escribir.
+        if (plan.lapicero == Lapicero.PLUMA && revelado >= 1f) {
+            val u = t.lineCount - 1
+            gota.color = color; gota.alpha = letra.alpha
+            canvas.drawCircle(margen + t.getLineWidth(u) + Papel.dp(context, 3f), (u + 1) * linea - Papel.dp(context, 9f),
+                Papel.dp(context, 1.6f) + (abs(semilla) % 3) * Papel.dp(context, 0.3f), gota)
+        }
+
+        if (plan.propuesta) dibujarPropuesta(canvas, color)
 
         // La raya: se dibuja en orden, renglón tras renglón, tanto como diga [tachado].
         if (tachado > 0f) {
@@ -186,6 +262,51 @@ class PlanView(context: Context, plan: Plan) : View(context) {
 
         if (golpe > 0f) dibujarSello(canvas)
     }
+
+    private fun dibujarPropuesta(canvas: Canvas, color: Int) {
+        val x0 = width - derecha - reserva + Papel.dp(context, 10f)
+        val base = linea - Papel.dp(context, 8f)
+        // El renglón de la firma (sin firmar no se puede tachar, así que nunca comparte sitio con el sello).
+        if (golpe <= 0f && firmado < 1f) {
+            guia.alpha = (255 * (1f - firmado)).toInt()
+            punteado.alpha = guia.alpha
+            canvas.drawText("firma:", x0, base, guia)
+            val xl = x0 + guia.measureText("firma: ")
+            canvas.drawLine(xl, base + Papel.dp(context, 2f), width - derecha, base + Papel.dp(context, 2f), punteado)
+        }
+        val nombre = plan.firma
+        if (firmado > 0f && !nombre.isNullOrBlank()) {
+            letraFirma.color = context.getColor(plan.tinta.otra().color)
+            val ancho = letraFirma.measureText(nombre)
+            val sola = width - derecha - ancho - Papel.dp(context, 4f)
+            // Al caer el sello, la firma se corre a su izquierda (si cabe después del texto).
+            val g = golpe.coerceIn(0f, 1f)
+            val junto = width - derecha - anchoSello() - ancho - Papel.dp(context, 8f)
+            val finTexto = margen + (texto?.getLineWidth(0) ?: 0f) + Papel.dp(context, 10f)
+            val cabe = junto >= finTexto
+            if (g <= 0f || cabe) {
+                val xf = sola + (junto - sola) * g
+                canvas.save()
+                canvas.rotate(-5f, xf, base)
+                canvas.clipRect(xf - Papel.dp(context, 4f), 0f, xf + (ancho + Papel.dp(context, 8f)) * firmado, linea)
+                canvas.drawText(nombre, xf, base, letraFirma)
+                canvas.restore()
+            }
+        }
+        // El clip: sujeta la propuesta hasta la firma; luego se suelta hacia arriba y desaparece.
+        if (sinClip < 1f) {
+            canvas.save()
+            canvas.translate(margen - Papel.dp(context, 26f), -Papel.dp(context, 7f) - sinClip * Papel.dp(context, 22f))
+            canvas.rotate(-10f - sinClip * 18f, Papel.dp(context, 6f), Papel.dp(context, 16f))
+            val alfa = (255 * (1f - sinClip)).toInt()
+            alambre.alpha = alfa; brillo.alpha = (alfa * 0.6f).toInt()
+            canvas.drawPath(clip, alambre)
+            canvas.drawPath(clip, brillo)
+            canvas.restore()
+        }
+    }
+
+    private fun anchoSello() = sello.measureText("¡LO HICIMOS!") + Papel.dp(context, 8f)
 
     private fun dibujarSello(canvas: Canvas) {
         val titulo = "¡LO HICIMOS!"
@@ -223,7 +344,8 @@ class PlanView(context: Context, plan: Plan) : View(context) {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
-        if (plan.hecho != null) return super.onTouchEvent(e) // tachado: solo pulsación larga
+        // Tachado: solo pulsación larga. Propuesta sin firma: todavía no se puede tachar.
+        if (plan.hecho != null || plan.porFirmar) return super.onTouchEvent(e)
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 x0 = e.x; y0 = e.y; arrastrando = false
@@ -237,6 +359,8 @@ class PlanView(context: Context, plan: Plan) : View(context) {
                 val dx = e.x - x0
                 if (!arrastrando && abs(dx) > toque && abs(dx) > abs(e.y - y0)) {
                     arrastrando = true
+                    // Tachar despacio no es una pulsación larga (si no, salía «¿lo borramos?» al terminar).
+                    cancelLongPress()
                     x0 = e.x // sin salto: la raya empieza donde el dedo decidió tachar
                     parent.requestDisallowInterceptTouchEvent(true)
                 }
@@ -283,20 +407,27 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     /** Para TalkBack: tocar dos veces tacha (no hay forma de arrastrar con el lector). */
     override fun performClick(): Boolean {
         super.performClick()
-        if (plan.hecho != null) alTocar?.invoke(plan)
+        if (plan.porFirmar) alFirmar?.invoke(plan)
+        else if (plan.hecho != null) alTocar?.invoke(plan)
         return true
     }
 
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
         super.onInitializeAccessibilityNodeInfo(info)
-        info.stateDescription = if (plan.hecho != null) "Cumplido" else "Pendiente"
+        info.stateDescription = when {
+            plan.hecho != null -> "Cumplido"
+            plan.porFirmar -> "Propuesta sin firmar"
+            else -> "Pendiente"
+        }
         info.addAction(
-            if (plan.hecho == null) AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, "Tachar")
+            if (plan.porFirmar) AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, "Firmar la propuesta")
+            else if (plan.hecho == null) AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, "Tachar")
             else AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_LONG_CLICK, "Quitar el tachado")
         )
     }
 
     override fun performAccessibilityAction(action: Int, arguments: android.os.Bundle?): Boolean {
+        if (action == AccessibilityNodeInfo.ACTION_CLICK && plan.porFirmar) return performClick()
         if (action == AccessibilityNodeInfo.ACTION_CLICK && plan.hecho == null) {
             completar(animar = true, conVibracion = true)
             alTachar?.invoke(plan, true)
@@ -363,7 +494,7 @@ class PlanView(context: Context, plan: Plan) : View(context) {
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        escritura?.cancel(); selloAnim?.cancel(); resorte.cancel()
+        escritura?.cancel(); selloAnim?.cancel(); firmaAnim?.cancel(); resorte.cancel()
     }
 
     companion object {

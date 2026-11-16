@@ -24,4 +24,7 @@
     <color name="cinta_menta">#A8D5C2</color>
     <color name="boleto">#F2E3C6</color>
     <color name="boleto_tinta">#8A3B2E</color>
+    <!-- Etapa 3: el clip de las propuestas y las manchas de café -->
+    <color name="clip">#8C9298</color>
+    <color name="cafe">#7A4A23</color>
 </resources>

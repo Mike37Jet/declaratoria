@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Acciones de accesibilidad de la hoja de la libreta -->
+    <item name="accion_limpiar_mancha" type="id" />
+</resources>
