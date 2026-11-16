@@ -36,11 +36,20 @@ data class AvisoLibreta(val pareja: String, val de: String, val quien: String, v
 
     /** Título y texto de la notificación, en palabras de la libreta. */
     fun titulo(): String = when (evento) {
-        Evento.PLAN -> "✏️ $quien escribió en la libreta"
-        Evento.PROPUESTA -> "📎 $quien te propone algo"
-        Evento.FIRMA -> "✍️ $quien firmó tu propuesta"
+        Evento.PLAN -> "$quien escribió en la libreta"
+        Evento.PROPUESTA -> "$quien te propone algo"
+        Evento.FIRMA -> "$quien firmó tu propuesta"
         Evento.HECHO -> "¡Lo hicieron!"
-        Evento.RECUERDO -> "📷 $quien pegó una foto en el álbum"
+        Evento.RECUERDO -> "$quien pegó una foto en el álbum"
+    }
+
+    /** El ícono pequeño de la notificación (de trazo, como lo demás de la libreta). */
+    fun icono(): Int = when (evento) {
+        Evento.PLAN -> R.drawable.ic_libreta_lapiz
+        Evento.PROPUESTA -> R.drawable.ic_libreta_clip
+        Evento.FIRMA -> R.drawable.ic_libreta_firma
+        Evento.HECHO -> R.drawable.ic_libreta_hecho
+        Evento.RECUERDO -> R.drawable.ic_libreta_foto
     }
 
     fun cuerpo(): String = when (evento) {
@@ -93,7 +102,10 @@ object AvisosLibreta {
     fun recibir(context: Context, datos: Map<String, String>): Boolean {
         if (!AvisoLibreta.esDeLibreta(datos)) return false
         val aviso = AvisoLibreta.paraEsteCelular(datos, Libreta.pareja(context), Toques.idCelular(context)) ?: return true
-        if (!libretaAbierta) mostrar(context, aviso)
+        if (!libretaAbierta) {
+            mostrar(context, aviso)
+            LibretaWidget.alAviso(context, aviso) // con la libreta abierta, ya lo anota ella
+        }
         return true
     }
 
@@ -117,7 +129,7 @@ object AvisosLibreta {
         val abrir = PendingIntent.getActivity(context, aviso.plan.hashCode(), destino.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(context, CANAL)
-            .setSmallIcon(R.drawable.ic_corazon)
+            .setSmallIcon(aviso.icono())
             .setColor(context.getColor(R.color.tapa_tela))
             .setContentTitle(aviso.titulo())
             .setContentText(aviso.cuerpo())

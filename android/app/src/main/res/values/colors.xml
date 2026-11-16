@@ -11,4 +11,9 @@
     <color name="gold_glow">#12D4AF37</color>
     <color name="error_texto">#FFB4AB</color>
     <color name="latido">#FF4D5E</color>
+    <!-- Pantalla principal «taquilla» -->
+    <color name="taquilla_panel">#140A08</color>
+    <color name="taquilla_tinta">#4A0404</color>
+    <color name="taquilla_borde">#6B5A2E</color>
+    <color name="taquilla_borde_suave">#3A2A20</color>
 </resources>

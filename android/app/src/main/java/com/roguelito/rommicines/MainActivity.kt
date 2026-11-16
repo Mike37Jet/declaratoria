@@ -25,9 +25,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.Gravity
-import android.widget.BaseAdapter
 import android.widget.Button
-import android.widget.GridView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -42,9 +40,8 @@ import java.util.concurrent.Executors
 class MainActivity : Activity() {
     private val trabajo = Executors.newSingleThreadExecutor()
     private val principal = Handler(Looper.getMainLooper())
-    private val adaptador = Adaptador()
-    private lateinit var contador: TextView
-    private var todasLasFotos = false
+    private lateinit var boleto: Boleto
+    private val miniaturas = LruCache<String, Bitmap>(60)
     private var encolando = false
     private var ultimoEnvio: WorkInfo? = null
     private var ocultarResultado = false
@@ -62,9 +59,14 @@ class MainActivity : Activity() {
     private val observarFotos = SharedPreferences.OnSharedPreferenceChangeListener { _, clave ->
         if (clave == "estado" || clave == "ultima_quitada" || clave == "sincronizadas") recargar()
     }
+    // La cartelera se lee de la copia que deja la libreta (la misma del widget).
+    private val observarLibreta = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> mostrarCartelera() }
+    private val observarToques = SharedPreferences.OnSharedPreferenceChangeListener { _, clave ->
+        if (clave == "recibido_cuando") mostrarUltimoRecibido()
+    }
     private val tic = object : Runnable {
         override fun run() {
-            contador.text = Juntos.texto(Juntos.ahora())
+            boleto.tiempo = Juntos.ahora()
             principal.postDelayed(this, 1000 - System.currentTimeMillis() % 1000)
         }
     }
@@ -73,7 +75,6 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         adaptarCabeceras()
-        todasLasFotos = savedInstanceState?.getBoolean("todas_fotos") ?: false
         ocultarResultado = savedInstanceState?.getBoolean("ocultar_resultado") ?: false
         findViewById<View>(R.id.raiz).setOnApplyWindowInsetsListener { vista, insets ->
             @Suppress("DEPRECATION")
@@ -81,27 +82,18 @@ class MainActivity : Activity() {
                 insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
             insets
         }
-        contador = findViewById(R.id.contador)
-        findViewById<View>(R.id.agregar).setOnClickListener { elegirFotos() }
+        boleto = findViewById(R.id.boleto)
         findViewById<View>(R.id.poner_widget).setOnClickListener { elegirWidget() }
         findViewById<View>(R.id.ayuda).setOnClickListener { mostrarAyuda() }
-        findViewById<View>(R.id.identidad).setOnClickListener { preguntarQuienEres() }
-        findViewById<View>(R.id.mandar_toque).setOnClickListener { mandarToque() }
+        findViewById<View>(R.id.mandar_toque).apply {
+            setOnClickListener { mandarToque() }
+            alPresionar(this)
+        }
         findViewById<View>(R.id.abrir_libreta).setOnClickListener {
             startActivity(Intent(this, com.roguelito.rommicines.libreta.LibretaActivity::class.java))
         }
-        findViewById<View>(R.id.elegir_toque).setOnClickListener { elegirToque() }
-        findViewById<View>(R.id.ver_fotos).setOnClickListener {
-            todasLasFotos = !todasLasFotos
-            recargar()
-        }
-        findViewById<GridView>(R.id.fotos).apply {
-            adapter = adaptador
-            setOnItemClickListener { _, _, posicion, _ -> verFoto(adaptador.fotos[posicion], posicion + 1) }
-            setOnItemLongClickListener { _, _, posicion, _ ->
-                confirmarQuitar(adaptador.fotos[posicion])
-                true
-            }
+        findViewById<View>(R.id.ver_funcion).setOnClickListener {
+            runCatching { Juntos.abrirPagina(this).send() }
         }
         mostrarQuienEres()
         prepararToques()
@@ -115,7 +107,7 @@ class MainActivity : Activity() {
 
     private fun adaptarCabeceras() {
         if (resources.configuration.fontScale < 1.3f) return
-        listOf(R.id.cabecera to R.id.titulo_app, R.id.cabecera_fotos to R.id.titulo_fotos).forEach { (fila, titulo) ->
+        listOf(R.id.cabecera_fotos to R.id.titulo_fotos).forEach { (fila, titulo) ->
             findViewById<LinearLayout>(fila).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.START
@@ -130,6 +122,8 @@ class MainActivity : Activity() {
         super.onStart()
         envios.observeForever(observarEnvios)
         fotosPrefs.registerOnSharedPreferenceChangeListener(observarFotos)
+        getSharedPreferences("libreta_widget", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(observarLibreta)
+        getSharedPreferences("toques", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(observarToques)
         // Con la libreta vinculada, «Nuestros recuerdos» es el mismo en los dos celulares.
         escuchaFotos = FotosCompartidas.escuchar(this)
     }
@@ -141,6 +135,8 @@ class MainActivity : Activity() {
         mostrarAvisoSegundoPlano()
         pedirSegundoPlano()
         recargar()
+        mostrarCartelera()
+        mostrarUltimoRecibido()
         ContadorWidget.actualizarTodos(this)
     }
 
@@ -152,13 +148,14 @@ class MainActivity : Activity() {
     override fun onStop() {
         envios.removeObserver(observarEnvios)
         fotosPrefs.unregisterOnSharedPreferenceChangeListener(observarFotos)
+        getSharedPreferences("libreta_widget", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(observarLibreta)
+        getSharedPreferences("toques", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(observarToques)
         escuchaFotos?.remove(); escuchaFotos = null
         FotosCompartidas.dejarDeEscuchar()
         super.onStop()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean("todas_fotos", todasLasFotos)
         outState.putBoolean("ocultar_resultado", ocultarResultado)
         super.onSaveInstanceState(outState)
     }
@@ -270,31 +267,111 @@ class MainActivity : Activity() {
 
     private fun mostrarQuienEres() {
         val yo = Toques.yo(this)
-        findViewById<Button>(R.id.identidad).apply {
-            text = if (yo == null) getString(R.string.elegir_nombre) else "$yo → ${Toques.otro(yo)} ▾"
-            contentDescription = if (yo == null) "Elegir quién usa este celular" else "Soy $yo. Cambiar mi nombre"
-        }
         findViewById<TextView>(R.id.destinatario).text = if (yo == null) "Un toque de cariño" else "Un toque para ${Toques.otro(yo)}"
-        findViewById<Button>(R.id.elegir_toque).apply {
-            text = "${Toques.preferido(this@MainActivity).frase} ▾"
-            contentDescription = "Mensaje: ${Toques.preferido(this@MainActivity).frase}. Cambiar mensaje"
-        }
+        mostrarPastillas()
+        mostrarUltimoRecibido()
         mostrarEnvio()
     }
 
-    private fun elegirToque() {
-        val tipos = TipoToque.elegibles
-        AlertDialog.Builder(this)
-            .setTitle("Tu mensaje · también en el widget")
-            .setSingleChoiceItems(tipos.map { it.frase }.toTypedArray(), tipos.indexOf(Toques.preferido(this))) { dialogo, i ->
-                Toques.elegirTipo(this, tipos[i])
-                ocultarResultado = true
-                mostrarQuienEres()
-                ContadorWidget.actualizarTodos(this)
-                dialogo.dismiss()
+    /** Las frases del toque, a la vista: la elegida va en dorado y es la misma que manda el widget. */
+    private fun mostrarPastillas() {
+        val fila = findViewById<ViewGroup>(R.id.pastillas)
+        val d = resources.displayMetrics.density
+        if (fila.childCount != TipoToque.elegibles.size) {
+            fila.removeAllViews()
+            TipoToque.elegibles.forEach { tipo ->
+                fila.addView(TextView(this).apply {
+                    text = tipo.etiqueta
+                    textSize = 14f
+                    setTextColor(getColorStateList(R.color.texto_pastilla))
+                    background = getDrawable(R.drawable.pastilla_toque)
+                    minHeight = (40 * d).toInt()
+                    gravity = Gravity.CENTER
+                    setPadding((14 * d).toInt(), 0, (14 * d).toInt(), 0)
+                    isClickable = true
+                    setOnClickListener {
+                        if (Toques.preferido(this@MainActivity) == tipo) return@setOnClickListener
+                        performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        Toques.elegirTipo(this@MainActivity, tipo)
+                        ocultarResultado = true
+                        mostrarPastillas()
+                        mostrarEnvio()
+                        ContadorWidget.actualizarTodos(this@MainActivity)
+                    }
+                    tag = tipo
+                })
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        }
+        val elegido = Toques.preferido(this)
+        for (i in 0 until fila.childCount) {
+            val v = fila.getChildAt(i)
+            val tipo = v.tag as TipoToque
+            v.isSelected = tipo == elegido
+            v.contentDescription = tipo.frase + if (tipo == elegido) ", elegido" else ". Elegir esta frase"
+        }
+    }
+
+    /** Lo último que llegó del otro, para que el toque se sienta conversación. */
+    private fun mostrarUltimoRecibido() {
+        val r = Toques.ultimoRecibido(this)
+        findViewById<TextView>(R.id.ultimo_recibido).apply {
+            visibility = if (r == null) View.GONE else View.VISIBLE
+            if (r != null) text = "Último de ${r.nombre}: «${r.tipo.frase}» · ${Toques.hace(r.cuando)}"
+        }
+    }
+
+    /** El botón se hunde apenas lo tocas, no al soltarlo. */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private fun alPresionar(v: View) {
+        v.setOnTouchListener { vista, e ->
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> if (vista.isEnabled)
+                    vista.animate().scaleX(0.97f).scaleY(0.97f).setDuration(100).start()
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL ->
+                    vista.animate().scaleX(1f).scaleY(1f).setDuration(160).start()
+            }
+            false
+        }
+    }
+
+    /** Los dos próximos planes de la libreta, como cartelera del cine. */
+    private fun mostrarCartelera() {
+        val hoja = com.roguelito.rommicines.libreta.LibretaWidget.leer(this)
+        val lista = findViewById<LinearLayout>(R.id.planes_cartelera)
+        lista.removeAllViews()
+        findViewById<TextView>(R.id.cuenta_libreta).text = if (hoja.vinculada) "${hoja.hechos}/${com.roguelito.rommicines.libreta.Libreta.META}" else ""
+        val planes = hoja.pendientes.take(2)
+        if (planes.isEmpty()) {
+            lista.addView(TextView(this).apply {
+                text = when {
+                    !hoja.vinculada -> "Abran su libreta y escriban la primera aventura."
+                    hoja.hechos == 0 -> "Todavía no hay planes en cartelera."
+                    else -> "Todo visto. Escriban el próximo estreno."
+                }
+                setTextColor(getColor(R.color.cream_soft)); textSize = 14f
+                typeface = android.graphics.Typeface.SERIF
+            })
+            return
+        }
+        planes.forEach { p ->
+            lista.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(0, (3 * resources.displayMetrics.density).toInt(), 0, 0)
+                val quien = if (p.tinta == com.roguelito.rommicines.libreta.Tinta.ROSA) Toques.MIMINA else Toques.ROGUELITO
+                addView(TextView(context).apply {
+                    text = p.texto
+                    setTextColor(getColor(R.color.cream)); textSize = 15f
+                    typeface = android.graphics.Typeface.SERIF
+                    maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                addView(TextView(context).apply {
+                    text = if (p.porFirmar) "$quien · por firmar" else quien
+                    setTextColor(getColor(R.color.cream_soft)); textSize = 12f
+                    setPadding((10 * resources.displayMetrics.density).toInt(), 0, 0, 0)
+                })
+            })
+        }
     }
 
     private fun mostrarEnvio() {
@@ -313,8 +390,7 @@ class MainActivity : Activity() {
                 else -> "Enviar toque"
             }
         }
-        findViewById<View>(R.id.elegir_toque).isEnabled = !ocupado
-        findViewById<View>(R.id.identidad).isEnabled = !ocupado
+        findViewById<ViewGroup>(R.id.pastillas).let { f -> for (i in 0 until f.childCount) f.getChildAt(i).isEnabled = !ocupado }
         findViewById<TextView>(R.id.estado_toque).apply {
             setTextColor(getColor(if (fallo) R.color.error_texto else R.color.cream_soft))
             text = when {
@@ -479,15 +555,21 @@ class MainActivity : Activity() {
     }
 
     private fun mostrarAyuda() {
-        val temas = arrayOf("Enviar y responder", "Poner un widget", "Mis fotos", "Mi nombre")
+        val temas = arrayOf("Enviar y responder", "Poner un widget", "Mis fotos", "Mi nombre", "Que los toques lleguen siempre")
         val pasos = arrayOf(
             getString(R.string.ayuda_toque) + "\n\nPara responder, toca ‘Un beso de vuelta’ en la notificación.",
             "Toca ‘Añadir widget’ y elige contador o carrusel.\n\nSi no aparece la ventana, mantén pulsado el inicio del celular → Widgets → ROMMICINES.\n\nPara cambiar el diseño del contador (Cielo, Neón, Perla…): ‘Añadir widget’ → ‘Cambiar el diseño del contador’, o mantén presionado el widget y toca el lápiz.",
-            "Toca ‘Añadir fotos’ para elegir imágenes. Toca una foto para verla o quitarla del carrusel. Después puedes usar ‘Deshacer’.",
-            "Toca tu nombre bajo ROMMICINES para cambiarlo. Elige un nombre distinto en cada celular."
+            "Desliza la tira de película y toca ‘+’ al final para añadir fotos. Toca un fotograma para verlo o quitarlo del carrusel. Después puedes usar ‘Deshacer’.",
+            "",
+            "",
         )
         AlertDialog.Builder(this).setTitle("¿En qué te ayudo?")
             .setItems(temas) { _, i ->
+                if (i == 3) return@setItems preguntarQuienEres()
+                if (i == 4) return@setItems if (!getSystemService(NotificationManager::class.java).areNotificationsEnabled()) activarAvisos()
+                    else if (!segundoPlanoListo()) abrirAjustesSegundoPlano()
+                    else { AlertDialog.Builder(this).setTitle(temas[i]).setMessage("Todo listo: los avisos están activos y Android no frena la app.")
+                        .setPositiveButton("Entendido", null).show(); Unit }
                 AlertDialog.Builder(this).setTitle(temas[i]).setMessage(pasos[i])
                     .setPositiveButton("Entendido", null).show()
             }
@@ -496,48 +578,54 @@ class MainActivity : Activity() {
 
     private fun recargar() {
         val fotos = Fotos.lista(this)
-        adaptador.fotos = if (todasLasFotos) fotos else fotos.take(6)
-        findViewById<TextView>(R.id.sin_fotos).visibility = if (fotos.isEmpty()) View.VISIBLE else View.GONE
-        findViewById<Button>(R.id.ver_fotos).apply {
-            visibility = if (fotos.size > 6) View.VISIBLE else View.GONE
-            text = if (todasLasFotos) "Ver menos" else "Ver las ${fotos.size} fotos"
+        val tira = findViewById<LinearLayout>(R.id.tira)
+        val d = resources.displayMetrics.density
+        val alto = (78 * d).toInt(); val ancho = (104 * d).toInt(); val hueco = (5 * d).toInt()
+        tira.removeAllViews()
+        fotos.forEachIndexed { i, foto ->
+            tira.addView(Fotograma(this).apply {
+                contentDescription = "Recuerdo ${i + 1}. Ver foto"
+                miniaturas.get(foto.name)?.let { setImageBitmap(it) } ?: run {
+                    trabajo.execute {
+                        val b = Fotos.reducida(foto, 360) ?: return@execute
+                        miniaturas.put(foto.name, b)
+                        principal.post { if (!isDestroyed) setImageBitmap(b) }
+                    }
+                }
+                setOnClickListener { verFoto(foto, i + 1) }
+                setOnLongClickListener { confirmarQuitar(foto); true }
+            }, LinearLayout.LayoutParams(ancho, alto).apply { marginEnd = hueco })
         }
-        findViewById<Button>(R.id.agregar).apply {
+        // Al final, el hueco para añadir más.
+        tira.addView(TextView(this).apply {
+            text = if (Fotos.importando) "…" else "+"
+            textSize = 26f
+            gravity = Gravity.CENTER
+            setTextColor(getColor(R.color.gold_light))
+            background = getDrawable(R.drawable.fotograma)
+            contentDescription = if (Fotos.importando) "Guardando fotos" else getString(R.string.anadir_fotos)
             isEnabled = !Fotos.importando
-            text = if (Fotos.importando) "Guardando…" else getString(R.string.anadir_fotos)
+            setOnClickListener { elegirFotos() }
+        }, LinearLayout.LayoutParams(if (fotos.isEmpty()) ancho * 2 else alto, alto))
+        findViewById<TextView>(R.id.pie_tira).text = when {
+            fotos.isEmpty() -> getString(R.string.sin_fotos)
+            fotos.size == 1 -> "1 fotograma · toca ‘+’ para añadir"
+            else -> "${fotos.size} fotogramas · desliza o toca ‘+’ para añadir"
         }
         mostrarEstadoFotos()
     }
 
-    private inner class Adaptador : BaseAdapter() {
-        var fotos = emptyList<File>()
-            set(value) { field = value; notifyDataSetChanged() }
-        private val miniaturas = LruCache<String, Bitmap>(60)
-        override fun getCount() = fotos.size
-        override fun getItem(position: Int) = fotos[position]
-        override fun getItemId(position: Int) = fotos[position].name.hashCode().toLong()
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val vista = convertView as? Cuadrada ?: Cuadrada(parent.context)
-            val foto = fotos[position]
-            vista.setImageBitmap(miniaturas.get(foto.name) ?: Fotos.reducida(foto, 360)?.also { miniaturas.put(foto.name, it) })
-            vista.contentDescription = "Recuerdo ${position + 1}. Ver foto"
-            return vista
-        }
-    }
-
-    private class Cuadrada(context: Context) : ImageView(context) {
+    /** Un fotograma de la tira: la foto recortada, con esquinas apenas redondeadas. */
+    private class Fotograma(context: Context) : ImageView(context) {
         init {
             scaleType = ScaleType.CENTER_CROP
             setBackgroundColor(context.getColor(R.color.velvet_dark))
             clipToOutline = true
             outlineProvider = object : ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, 8 * resources.displayMetrics.density)
+                    outline.setRoundRect(0, 0, view.width, view.height, 2 * resources.displayMetrics.density)
                 }
             }
-        }
-        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            super.onMeasure(widthMeasureSpec, widthMeasureSpec)
         }
     }
 

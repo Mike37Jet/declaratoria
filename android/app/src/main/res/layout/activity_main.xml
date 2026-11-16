@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- La pantalla principal como taquilla de cine: marquesina, boleto, toque, tira de película y cartelera. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/raiz"
     android:layout_width="match_parent"
@@ -10,101 +11,81 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="12dp"
+        android:paddingHorizontal="18dp"
+        android:paddingTop="4dp"
         android:paddingBottom="24dp">
-        <LinearLayout
-            android:id="@+id/cabecera"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-            <TextView
-                android:id="@+id/titulo_app"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="serif"
-                android:letterSpacing="0.06"
-                android:text="@string/app_name"
-                android:textColor="@color/gold"
-                android:textSize="23sp"
-                android:textStyle="bold" />
-            <Button
-                android:id="@+id/ayuda"
-                style="@style/AccionTexto"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/ayuda" />
-        </LinearLayout>
+
         <Button
-            android:id="@+id/identidad"
+            android:id="@+id/ayuda"
             style="@style/AccionTexto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="start|center_vertical"
-            android:paddingStart="0dp"
-            android:text="@string/elegir_nombre"
-            android:textColor="@color/cream_soft" />
+            android:layout_gravity="end"
+            android:text="@string/ayuda" />
+
+        <com.roguelito.rommicines.Marquesina
+            android:id="@+id/marquesina"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <com.roguelito.rommicines.Boleto
+            android:id="@+id/boleto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" />
+
+        <!-- El toque -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/panel_inicio"
-            android:gravity="center"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/panel_taquilla"
             android:orientation="vertical"
-            android:padding="18dp">
+            android:paddingHorizontal="14dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="6dp">
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/tiempo_juntos"
-                android:textColor="@color/cream_soft"
-                android:textSize="13sp" />
-            <TextView
-                android:id="@+id/contador"
+                android:id="@+id/destinatario"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:fontFamily="monospace"
+                android:fontFamily="serif"
+                android:text="@string/un_toque"
+                android:textColor="@color/cream"
+                android:textSize="19sp" />
+            <TextView
+                android:id="@+id/ultimo_recibido"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/cream_soft"
+                android:textSize="13sp"
+                android:visibility="gone" />
+            <com.roguelito.rommicines.Renglones
+                android:id="@+id/pastillas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" />
+            <Button
+                android:id="@+id/mandar_toque"
+                style="@style/AccionPrincipal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/enviar_taquilla"
+                android:text="@string/enviar_toque" />
+            <TextView
+                android:id="@+id/estado_toque"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="24dp"
+                android:accessibilityLiveRegion="polite"
                 android:gravity="center"
-                android:textColor="@color/gold_light"
-                android:textSize="21sp"
-                android:textStyle="bold" />
+                android:paddingTop="6dp"
+                android:textColor="@color/cream_soft"
+                android:textSize="13sp" />
         </LinearLayout>
-        <TextView
-            android:id="@+id/destinatario"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:fontFamily="serif"
-            android:text="@string/un_toque"
-            android:textColor="@color/cream"
-            android:textSize="21sp" />
-        <Button
-            android:id="@+id/elegir_toque"
-            style="@style/AccionSecundaria"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="start|center_vertical"
-            android:text="@string/elegir_toque" />
-        <Button
-            android:id="@+id/mandar_toque"
-            style="@style/AccionPrincipal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="@string/enviar_toque" />
-        <TextView
-            android:id="@+id/estado_toque"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="32dp"
-            android:accessibilityLiveRegion="polite"
-            android:gravity="center"
-            android:paddingTop="6dp"
-            android:textColor="@color/cream_soft"
-            android:textSize="13sp" />
+
+        <!-- Solo salen si falta algo para que los toques lleguen. -->
         <Button
             android:id="@+id/aviso_recepcion"
             style="@style/AccionTexto"
@@ -117,18 +98,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone" />
-        <Button
-            android:id="@+id/abrir_libreta"
-            style="@style/AccionSecundaria"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/nuestra_libreta" />
+
+        <!-- En pantalla: los recuerdos como tira de película -->
         <LinearLayout
             android:id="@+id/cabecera_fotos"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
             <TextView
@@ -137,43 +113,53 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="serif"
-                android:text="@string/recuerdos"
+                android:text="@string/en_pantalla"
                 android:textColor="@color/cream"
-                android:textSize="21sp" />
+                android:textSize="19sp" />
             <Button
-                android:id="@+id/agregar"
+                android:id="@+id/ver_funcion"
                 style="@style/AccionTexto"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/anadir_fotos" />
+                android:paddingEnd="0dp"
+                android:text="@string/ver_la_funcion" />
         </LinearLayout>
-        <com.roguelito.rommicines.GaleriaInicio
-            android:id="@+id/fotos"
+        <LinearLayout
+            android:id="@+id/cinta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:horizontalSpacing="8dp"
-            android:verticalSpacing="8dp"
-            android:numColumns="3"
-            android:stretchMode="columnWidth"
-            android:scrollbars="none" />
+            android:layout_marginTop="4dp"
+            android:background="#000000"
+            android:orientation="vertical">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:background="@drawable/perforacion" />
+            <HorizontalScrollView
+                android:id="@+id/tira_scroll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/tira"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </HorizontalScrollView>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:background="@drawable/perforacion" />
+        </LinearLayout>
         <TextView
-            android:id="@+id/sin_fotos"
+            android:id="@+id/pie_tira"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingVertical="24dp"
-            android:text="@string/sin_fotos"
+            android:layout_marginTop="6dp"
             android:textColor="@color/cream_soft"
-            android:textSize="14sp"
-            android:visibility="gone" />
-        <Button
-            android:id="@+id/ver_fotos"
-            style="@style/AccionTexto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ver_todas"
-            android:visibility="gone" />
+            android:textSize="12sp" />
         <LinearLayout
             android:id="@+id/resultado_fotos"
             android:layout_width="match_parent"
@@ -196,6 +182,56 @@
                 android:layout_height="wrap_content"
                 android:text="@string/deshacer" />
         </LinearLayout>
+
+        <!-- Cartelera: los próximos planes de la libreta -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/cartelera"
+            android:orientation="vertical"
+            android:paddingHorizontal="14dp"
+            android:paddingTop="12dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:letterSpacing="0.15"
+                    android:text="@string/cartelera"
+                    android:textColor="@color/gold"
+                    android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/cuenta_libreta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:textColor="@color/cream_soft"
+                    android:textSize="12sp" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/planes_cartelera"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="10dp"
+                android:background="@color/taquilla_borde_suave" />
+            <Button
+                android:id="@+id/abrir_libreta"
+                style="@style/AccionTexto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/abrir_libreta" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/poner_widget"
             style="@style/AccionSecundaria"

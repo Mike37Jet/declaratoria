@@ -218,7 +218,7 @@ class LibretaActivity : Activity() {
         })
         copiar?.let { tarjeta.addView(botonCopiar(it)) }
         pie?.let { tarjeta.addView(letra(it, 18f, R.color.tinta_suave)) }
-        botones.forEach { (texto, accion) -> tarjeta.addView(boton(texto, accion)) }
+        botones.forEach { (texto, accion) -> tarjeta.addView(boton(texto, accion = accion)) }
         estado = letra("", 17f, R.color.sello).apply { visibility = View.GONE }
         tarjeta.addView(estado)
         escritorio.addView(tarjeta, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER).apply {
@@ -368,7 +368,7 @@ class LibretaActivity : Activity() {
         lista.forEachIndexed { i, plan ->
             val vista = vistas[plan.id]
             if (vista == null) {
-                val nueva = PlanView(this, plan).apply { alTachar = ::tachar; alTocar = ::abrirRecuerdo; alFirmar = ::firmar }
+                val nueva = PlanView(this, plan).apply { alTachar = ::tachar; alTocar = ::abrirRecuerdo; alFirmar = ::firmar; alCorregir = ::corregir }
                 vistas[plan.id] = nueva
                 contenedor.addView(nueva, i)
                 if (plan.autor != yo && !Libreta.visto(this, plan.id)) {
@@ -388,6 +388,7 @@ class LibretaActivity : Activity() {
         cuenta?.text = "$n de ${Libreta.META}"
         hojaPapel?.manchas = Libreta.manchas(n)
         hechos = n
+        LibretaWidget.guardar(this, lista)
     }
 
     /** Al abrir la tapa, los planes nuevos del otro se escriben uno tras otro. */
@@ -408,8 +409,70 @@ class LibretaActivity : Activity() {
             }, 900)
             return
         }
-        nota("¿Lo borramos?", "«${plan.texto}» vuelve a quedar pendiente, sin sello.", "Sí, borrar el tachón", "Dejarlo así") {
+        nota("¿Quitamos el tachón?", "«${plan.texto}» vuelve a quedar pendiente, sin sello.", "Sí, quitar el tachón", "Dejarlo así") {
             Libreta.tachar(this, plan, false)
+        }
+    }
+
+    /**
+     * Pulsación larga en un plan sin tachar: una notita para corregir lo que dice,
+     * y abajo la opción de borrarlo (por si se escribió por error).
+     */
+    private fun corregir(plan: Plan) {
+        if (capa != null) return
+        val tarjeta = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = HojaDrawable(this@LibretaActivity)
+            elevation = dp(10).toFloat()
+            setPadding(margen + dp(4), linea.toInt(), dp(20), dp(14))
+            rotation = 1.2f
+            isClickable = true
+        }
+        tarjeta.addView(letra("Corregir el plan", 28f, R.color.tinta_lapiz, negrita = true))
+        val campo = EditText(this).apply {
+            background = null
+            typeface = if (plan.lapicero.negrita) Papel.letraNegrita(this@LibretaActivity) else Papel.letra(this@LibretaActivity)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, Papel.LETRA_SP)
+            setTextColor(getColor(plan.tinta.color))
+            setText(plan.texto)
+            includeFontPadding = false
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            isSingleLine = true
+            filters = arrayOf(InputFilter.LengthFilter(Libreta.MAX_TEXTO))
+            minHeight = linea.toInt()
+            setPadding(0, dp(6), 0, dp(4))
+        }
+        val guardar = { Libreta.editar(this, plan, campo.text.toString()); cerrarCapa() }
+        campo.setOnEditorActionListener { _, accion, _ -> if (accion == EditorInfo.IME_ACTION_DONE) { guardar(); true } else false }
+        tarjeta.addView(campo)
+        tarjeta.addView(boton("Guardar") { guardar() })
+        tarjeta.addView(letra("Borrar este plan", 19f, R.color.sello, negrita = true).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            gravity = Gravity.CENTER
+            minHeight = dp(48)
+            isClickable = true
+            setOnClickListener { cerrarCapa(); borrar(plan) }
+        })
+        tarjeta.addView(letra("Dejarlo", 19f, R.color.tinta_suave, negrita = true).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            gravity = Gravity.CENTER
+            minHeight = dp(48)
+            isClickable = true
+            setOnClickListener { cerrarCapa() }
+        })
+        mostrarCapa(tarjeta)
+        campo.post { campo.requestFocus(); campo.setSelection(campo.text.length) }
+    }
+
+    /** Borrar un plan escrito por error: el renglón se desvanece y se va de los dos celulares. */
+    private fun borrar(plan: Plan) {
+        val que = if (plan.propuesta && plan.firmadaPor == null) "la propuesta" else "el plan"
+        nota("¿Lo borramos?", "«${plan.texto}» se borra de la libreta, para los dos.", "Sí, borrar $que", "Dejarlo") {
+            val vista = vistas[plan.id]
+            if (vista == null || !Papel.conMovimiento()) { Libreta.borrar(this, plan); return@nota }
+            vista.animate().alpha(0f).translationX(-dp(12).toFloat()).setDuration(180).setInterpolator(Papel.salida)
+                .withEndAction { Libreta.borrar(this, plan) }.start()
         }
     }
 
@@ -417,12 +480,12 @@ class LibretaActivity : Activity() {
     private fun firmar(plan: Plan) {
         val otro = Toques.otro(Toques.yo(this))
         if (plan.autor == Libreta.yo()) {
-            val texto = "Falta que $otro la firme 📎"
-            mensaje(texto, error = false)
-            escritorio.postDelayed({ if (estado?.text == texto) mensaje("") }, 3000)
+            val texto = "Falta que $otro la firme"
+            mensaje(texto, error = false, icono = R.drawable.ic_libreta_clip)
+            escritorio.postDelayed({ if (estado?.text?.toString()?.startsWith(texto) == true) mensaje("") }, 3000)
             return
         }
-        nota("¿Lo firmas?", "«${plan.texto}»\nCon tu firma queda como plan de los dos.", "Firmar ✍️", "Todavía no") {
+        nota("¿Lo firmas?", "«${plan.texto}»\nCon tu firma queda como plan de los dos.", "Firmar", "Todavía no", siIcono = R.drawable.ic_libreta_firma) {
             Libreta.firmar(this, plan)
         }
     }
@@ -569,7 +632,7 @@ class LibretaActivity : Activity() {
      * Una notita de papel para preguntar algo (en vez del diálogo gris del sistema):
      * título a mano, el plan entre comillas y dos respuestas.
      */
-    private fun nota(titulo: String, texto: String, si: String, no: String, accion: () -> Unit) {
+    private fun nota(titulo: String, texto: String, si: String, no: String, siIcono: Int? = null, accion: () -> Unit) {
         if (capa != null) return
         val tarjeta = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -583,7 +646,7 @@ class LibretaActivity : Activity() {
         tarjeta.addView(letra(texto, 20f, R.color.tinta_suave).apply {
             (layoutParams as ViewGroup.MarginLayoutParams).topMargin = dp(4)
         })
-        tarjeta.addView(boton(si) { cerrarCapa(); accion() })
+        tarjeta.addView(boton(si, siIcono) { cerrarCapa(); accion() })
         tarjeta.addView(letra(no, 19f, R.color.tinta_suave, negrita = true).apply {
             paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
             gravity = Gravity.CENTER
@@ -657,10 +720,11 @@ class LibretaActivity : Activity() {
 
     // --- Piezas -----------------------------------------------------------------------
 
-    private fun mensaje(texto: String, error: Boolean = true) {
+    private fun mensaje(texto: String, error: Boolean = true, icono: Int? = null) {
         estado?.apply {
-            text = texto
-            setTextColor(getColor(if (error) R.color.sello else R.color.tinta_suave))
+            val color = getColor(if (error) R.color.sello else R.color.tinta_suave)
+            text = if (icono == null) texto else conIcono(texto, trazo(icono, color, textSize), alFinal = true)
+            setTextColor(color)
             visibility = if (texto.isEmpty()) View.GONE else View.VISIBLE
         }
     }
@@ -675,8 +739,24 @@ class LibretaActivity : Activity() {
     }
 
     /** Un botón como etiqueta de tela, del mismo verde que la tapa. */
-    private fun boton(texto: String, accion: () -> Unit) = TextView(this).apply {
-        text = texto
+    /** Un ícono de trazo (Phosphor, licencia MIT) del color de la tinta y del alto de la letra. */
+    private fun trazo(icono: Int, color: Int, lado: Float) = getDrawable(icono)!!.mutate().apply {
+        setTint(color)
+        setBounds(0, 0, lado.toInt(), lado.toInt())
+    }
+
+    /** El texto con su ícono pegado, dentro de la misma línea (así se centran juntos). */
+    private fun conIcono(texto: String, icono: android.graphics.drawable.Drawable, alFinal: Boolean = false): CharSequence {
+        val marca = android.text.SpannableStringBuilder()
+        val span = android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_BASELINE)
+        if (alFinal) marca.append(texto).append("  ").append("·", span, 0)
+        else marca.append("·", span, 0).append("  ").append(texto)
+        return marca
+    }
+
+    private fun boton(texto: String, icono: Int? = null, accion: () -> Unit) = TextView(this).apply {
+        text = if (icono == null) texto else conIcono(texto, trazo(icono, getColor(R.color.tapa_etiqueta), Papel.sp(this@LibretaActivity, 22f)))
+        contentDescription = texto
         typeface = Papel.letraNegrita(this@LibretaActivity)
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
         setTextColor(getColor(R.color.tapa_etiqueta))

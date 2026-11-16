@@ -79,6 +79,31 @@ object Toques {
             .putString("ultimo_motivo", motivo)
             .putString("ultimo_tipo", tipo.codigo)
             .apply()
+        if (recibido && !fallo) prefs(context).edit()
+            .putLong("recibido_cuando", System.currentTimeMillis())
+            .putString("recibido_nombre", nombre)
+            .putString("recibido_tipo", tipo.codigo)
+            .apply()
+    }
+
+    /** El último toque que llegó del otro (aunque después hayas mandado uno), para la pantalla principal. */
+    fun ultimoRecibido(context: Context): Evento? {
+        val p = prefs(context)
+        val cuando = p.getLong("recibido_cuando", 0)
+        if (cuando == 0L) return null
+        return Evento(true, p.getString("recibido_nombre", "") ?: "", cuando, false, TipoToque.desde(p.getString("recibido_tipo", null)))
+    }
+
+    /** «hace un momento», «hace 5 min», «hace 2 h», «ayer» o la fecha: siempre en español. */
+    fun hace(cuando: Long, ahora: Long = System.currentTimeMillis()): String {
+        val min = (ahora - cuando).coerceAtLeast(0) / 60_000
+        return when {
+            min < 1 -> "hace un momento"
+            min < 60 -> "hace $min min"
+            min < 24 * 60 -> "hace ${min / 60} h"
+            min < 48 * 60 -> "ayer"
+            else -> SimpleDateFormat("d 'de' MMMM", Locale.forLanguageTag("es")).format(Date(cuando))
+        }
     }
 
     fun hora(cuando: Long): String = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(cuando))

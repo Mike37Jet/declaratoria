@@ -48,9 +48,22 @@ que el otro la firma; mientras, no se puede tachar. Cada uno elige **lapicero** 
 guarda en las prefs «libreta»). Las **manchas de café** salen al llevar 3, 10 y 20 planes hechos (`Libreta.manchas`)
 y se limpian frotando de lado a lado (`PaginaView`); las limpias quedan en `parejas/{p}/hoja/manchas`.
 Las preguntas dentro de la libreta van en una notita de papel (`nota()`), no en `AlertDialog`.
+En la libreta **no se usan emojis**: los íconos son de trazo, de Phosphor Icons (light, MIT) pasados a
+`res/drawable/ic_libreta_*.xml` (licencia en `res/raw/phosphor_licencia.txt`). Los toques sí llevan emoji (`TipoToque`).
+Pulsación larga: en un plan sin tachar, corregirlo o borrarlo (`corregir()`); en uno tachado, quitar el tachón.
 Los **avisos** de la libreta (`AvisosLibreta.kt`) viajan por el mismo tema `toques` con `"clase":"libreta"`
 y el id de la pareja (sin campo `nombre`, para que un APK viejo no los tome por toque); cada celular descarta
 los de otra pareja y los suyos. Para probar en el emulador sin mandar nada: modo avión + prefs falsas.
+
+La **pantalla principal** es una taquilla de cine ([Taquilla.kt](android/app/src/main/java/com/roguelito/rommicines/Taquilla.kt):
+`Marquesina`, `Boleto`, `Renglones`): las frases del toque van como pastillas (`TipoToque.elegibles`), los recuerdos
+en una tira de película horizontal y la «cartelera» lee la misma copia local que el widget de la libreta.
+El último toque recibido se guarda aparte (`Toques.ultimoRecibido`). El nombre se cambia desde Ayuda.
+
+El **widget de la libreta** (`libreta/LibretaWidget.kt`) se dibuja entero como imagen (papel, renglones,
+Caveat) porque un widget no admite fuentes propias. Lee una copia local (prefs «libreta_widget») que deja
+`LibretaActivity.pintar` y parchan los avisos del otro celular (`LibretaWidget.alAviso`); no lee Firestore.
+Mini: el próximo plan (en dos renglones si no cabe); franja: el próximo y «n/100»; completo: título y hasta 3 planes.
 
 «Nuestros recuerdos» (pantalla principal y widget carrusel) se comparte cuando la libreta está
 vinculada ([FotosCompartidas.kt](android/app/src/main/java/com/roguelito/rommicines/FotosCompartidas.kt)):

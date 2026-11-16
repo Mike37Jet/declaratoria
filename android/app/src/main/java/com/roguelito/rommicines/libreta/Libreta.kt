@@ -235,6 +235,20 @@ object Libreta {
         AvisosLibreta.enviar(context, Evento.FIRMA, plan.id, plan.texto)
     }
 
+    /** Arrancar un plan escrito por error (solo los que no están tachados: los cumplidos tienen su recuerdo). */
+    fun borrar(context: Context, plan: Plan) {
+        val pareja = pareja(context) ?: return
+        db.collection("parejas").document(pareja).collection("planes").document(plan.id).delete()
+    }
+
+    /** Corregir lo que dice un plan (sin aviso al otro: lo verá cambiar en la libreta). */
+    fun editar(context: Context, plan: Plan, texto: String) {
+        val pareja = pareja(context) ?: return
+        val limpio = texto.trim().take(MAX_TEXTO)
+        if (limpio.isEmpty() || limpio == plan.texto) return
+        db.collection("parejas").document(pareja).collection("planes").document(plan.id).update("texto", limpio)
+    }
+
     fun tachar(context: Context, plan: Plan, hecho: Boolean) {
         val pareja = pareja(context) ?: return
         db.collection("parejas").document(pareja).collection("planes").document(plan.id).update(mapOf(

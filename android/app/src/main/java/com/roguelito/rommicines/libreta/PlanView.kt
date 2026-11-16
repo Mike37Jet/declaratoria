@@ -44,6 +44,8 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     var alTocar: ((Plan) -> Unit)? = null
     /** Tocar una propuesta sin firmar (la libreta decide si quien toca puede firmarla). */
     var alFirmar: ((Plan) -> Unit)? = null
+    /** Pulsación larga en un plan sin tachar: corregirlo o borrarlo. */
+    var alCorregir: ((Plan) -> Unit)? = null
 
     private val linea = Papel.linea(context)
     private val margen = Papel.margen(context)
@@ -401,6 +403,11 @@ class PlanView(context: Context, plan: Plan) : View(context) {
             alTachar?.invoke(plan, false)
             return true
         }
+        if (alCorregir != null) {
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            alCorregir?.invoke(plan)
+            return true
+        }
         return super.performLongClick()
     }
 
@@ -424,6 +431,7 @@ class PlanView(context: Context, plan: Plan) : View(context) {
             else if (plan.hecho == null) AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, "Tachar")
             else AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_LONG_CLICK, "Quitar el tachado")
         )
+        if (plan.hecho == null) info.addAction(AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_LONG_CLICK, "Corregir o borrar el plan"))
     }
 
     override fun performAccessibilityAction(action: Int, arguments: android.os.Bundle?): Boolean {
