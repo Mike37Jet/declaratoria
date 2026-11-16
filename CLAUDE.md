@@ -38,6 +38,17 @@ Firestore + acceso anónimo + código de 6 letras para unir el segundo celular. 
 `android/firestore.rules` y se pegan a mano en la consola de Firebase (Firestore → Reglas).
 Diseño de papelería (letra Caveat, `colors_libreta.xml`), nada del estilo cine.
 
+El **álbum de recortes** (`Album.kt`, `AlbumActivity.kt`, `RecuerdoView.kt`): al tachar un plan se pide
+foto + una línea y queda en `parejas/{p}/recuerdos/{idDelPlan}`. La foto va **dentro del documento**
+como Blob JPEG ≤ 200 KB (`Album.LIMITE`), porque Cloud Storage exige el plan Blaze. El Nº del boleto
+es el orden en que se tachó (`Album.numeroDeBoleto`).
+
+«Nuestros recuerdos» (pantalla principal y widget carrusel) se comparte cuando la libreta está
+vinculada ([FotosCompartidas.kt](android/app/src/main/java/com/roguelito/rommicines/FotosCompartidas.kt)):
+la lista liviana en `parejas/{p}/fotos` y cada foto aparte en `fotosDatos` (se baja una sola vez).
+Cada celular sigue leyendo su copia de `filesDir/fotos`; quitar marca `quitada` en vez de borrar.
+Las fotos de la página (`0000000000000-…`) no se suben: vienen en la app. Solo sincroniza con la app abierta.
+
 ## Cosas que no se ven en el código
 
 - **La fecha del "sí" está duplicada**: `OFFICIAL_YES_DATE` en `src/config.ts` y `DESDE` en

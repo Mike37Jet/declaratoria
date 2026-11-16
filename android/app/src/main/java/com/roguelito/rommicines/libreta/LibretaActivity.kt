@@ -2,6 +2,8 @@ package com.roguelito.rommicines.libreta
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Paint
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -13,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -20,6 +23,7 @@ import android.widget.TextView
 import com.google.firebase.firestore.ListenerRegistration
 import com.roguelito.rommicines.R
 import com.roguelito.rommicines.Toques
+import java.util.concurrent.Executors
 
 /**
  * La libreta compartida: una hoja de cuaderno sobre un escritorio, cerrada con su tapa.
@@ -40,10 +44,29 @@ class LibretaActivity : Activity() {
 
     private var escuchaPlanes: ListenerRegistration? = null
     private var escuchaMiembros: ListenerRegistration? = null
+    private var escuchaRecuerdos: ListenerRegistration? = null
+
+    /** Lo último que llegó de Firestore, para numerar el boleto y saber qué planes ya tienen foto. */
+    private var ultimosPlanes: List<Plan> = emptyList()
+    private var conRecuerdo: Set<String> = emptySet()
+
+    // La hoja de «¡Lo hicieron!» que pide la foto, si está abierta.
+    private var capa: FrameLayout? = null
+    private var planDeCapa: Plan? = null
+    private var fotoLista: ByteArray? = null
+    private var vistaFoto: ImageView? = null
+    private var avisoFoto: TextView? = null
+    private var botonPegar: TextView? = null
+    private val trabajo = Executors.newSingleThreadExecutor()
 
     /** Con la tapa abierta, «atrás» la cierra en vez de salir (Android 13+; antes, onBackPressed). */
     private val cerrarTapa: Any? by lazy {
-        if (android.os.Build.VERSION.SDK_INT >= 33) android.window.OnBackInvokedCallback { tapa?.cerrar() } else null
+        if (android.os.Build.VERSION.SDK_INT >= 33) android.window.OnBackInvokedCallback { atras() } else null
+    }
+
+    /** Primero se cierra la hoja de la foto; luego, la tapa. */
+    private fun atras() {
+        if (capa != null) cerrarCapa() else tapa?.cerrar()
     }
 
     private fun atrasCierraTapa(si: Boolean) {
@@ -71,7 +94,7 @@ class LibretaActivity : Activity() {
     private fun mostrar() {
         escritorio.removeAllViews()
         atrasCierraTapa(false)
-        tapa = null; planes = null; contador = null; cuenta = null; estado = null; hoja = null
+        tapa = null; planes = null; contador = null; cuenta = null; estado = null; hoja = null; capa = null
         vistas.clear(); porEscribir.clear(); hechos = -1
         when {
             Toques.yo(this) == null -> tarjeta(
@@ -93,12 +116,18 @@ class LibretaActivity : Activity() {
         super.onStop()
         escuchaPlanes?.remove(); escuchaPlanes = null
         escuchaMiembros?.remove(); escuchaMiembros = null
+        escuchaRecuerdos?.remove(); escuchaRecuerdos = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        trabajo.shutdown()
     }
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val t = tapa
-        if (t != null && t.abierta) t.cerrar() else @Suppress("DEPRECATION") super.onBackPressed()
+        if (capa != null || (t != null && t.abierta)) atras() else @Suppress("DEPRECATION") super.onBackPressed()
     }
 
     // --- Vincular los dos celulares ---------------------------------------------------
@@ -201,10 +230,15 @@ class LibretaActivity : Activity() {
             clipChildren = false
         }
         // Encabezado: dos renglones, el título escrito sobre el segundo.
-        pagina.addView(letra("Nuestras aventuras", 30f, R.color.tinta_lapiz, negrita = true).apply {
+        val encabezado = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM }
+        encabezado.addView(letra("Nuestras aventuras", 30f, R.color.tinta_lapiz, negrita = true).apply {
             gravity = Gravity.BOTTOM
-            setPadding(margen, 0, dp(20), dp(5))
-        }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (linea * 2).toInt()))
+            setPadding(margen, 0, 0, dp(5))
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
+        encabezado.addView(pestanaAlbum(), LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.TOP; topMargin = dp(10); rightMargin = dp(14)
+        })
+        pagina.addView(encabezado, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (linea * 2).toInt()))
 
         val fila = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.BOTTOM }
         fila.addView(letra("Contador de aventuras", 20f, R.color.tinta_suave).apply { setPadding(margen, 0, 0, dp(7)) },
@@ -281,6 +315,8 @@ class LibretaActivity : Activity() {
         escuchaPlanes?.remove()
         escuchaPlanes = Libreta.escucharPlanes(pareja, ::pintar) { mensaje(it) }
         escuchaMiembros?.remove()
+        escuchaRecuerdos?.remove()
+        escuchaRecuerdos = Album.escuchar(pareja) { lista -> conRecuerdo = lista.map { it.id }.toSet() }
         escuchaMiembros = Libreta.escucharMiembros(pareja) { n ->
             val codigo = Libreta.codigo(this)
             if (n < 2 && codigo != null) mensaje("Falta ${Toques.otro(Toques.yo(this))}: su código es ${Codigos.mostrar(codigo)}", error = false)
@@ -290,6 +326,7 @@ class LibretaActivity : Activity() {
 
     private fun pintar(lista: List<Plan>) {
         val contenedor = planes ?: return
+        ultimosPlanes = lista
         val abierta = tapa?.abierta == true
         val yo = Libreta.yo()
         val ids = lista.map { it.id }.toSet()
@@ -298,7 +335,7 @@ class LibretaActivity : Activity() {
         lista.forEachIndexed { i, plan ->
             val vista = vistas[plan.id]
             if (vista == null) {
-                val nueva = PlanView(this, plan).apply { alTachar = ::tachar }
+                val nueva = PlanView(this, plan).apply { alTachar = ::tachar; alTocar = ::abrirRecuerdo }
                 vistas[plan.id] = nueva
                 contenedor.addView(nueva, i)
                 if (plan.autor != yo && !Libreta.visto(this, plan.id)) {
@@ -329,13 +366,214 @@ class LibretaActivity : Activity() {
     }
 
     private fun tachar(plan: Plan, hecho: Boolean) {
-        if (hecho) { Libreta.tachar(this, plan, true); return }
+        if (hecho) {
+            Libreta.tachar(this, plan, true)
+            // Que el sello caiga y se asiente antes de pedir la foto.
+            if (plan.id !in conRecuerdo) escritorio.postDelayed({
+                if (!isFinishing && capa == null) pedirFoto(plan.copy(hecho = System.currentTimeMillis()))
+            }, 900)
+            return
+        }
         AlertDialog.Builder(this)
             .setTitle("¿Quitar el tachado?")
             .setMessage("«${plan.texto}» volverá a quedar pendiente.")
             .setPositiveButton("Quitar") { _, _ -> Libreta.tachar(this, plan, false) }
             .setNegativeButton("Dejarlo", null)
             .show()
+    }
+
+    // --- El álbum ---------------------------------------------------------------------
+
+    private fun abrirAlbum(irA: String? = null, recien: Boolean = false) {
+        startActivity(Intent(this, AlbumActivity::class.java).apply {
+            irA?.let { putExtra(AlbumActivity.IR_A, it) }
+            putExtra(AlbumActivity.RECIEN, recien)
+        })
+    }
+
+    /** Tocar un plan tachado: su página del álbum, o la hoja para pegarle una foto si aún no tiene. */
+    private fun abrirRecuerdo(plan: Plan) {
+        if (plan.id in conRecuerdo) abrirAlbum(plan.id) else if (capa == null) pedirFoto(plan)
+    }
+
+    /** Una pestaña de cartulina asomando por el borde de la hoja, como separador. */
+    private fun pestanaAlbum() = TextView(this).apply {
+        text = "Álbum"
+        typeface = Papel.letraNegrita(this@LibretaActivity)
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
+        setTextColor(getColor(R.color.boleto_tinta))
+        gravity = Gravity.CENTER
+        minHeight = dp(40)
+        setPadding(dp(14), dp(4), dp(14), dp(4))
+        background = GradientDrawable().apply { setColor(getColor(R.color.cinta_miel)); cornerRadius = dp(4).toFloat() }
+        rotation = 2f
+        elevation = dp(2).toFloat()
+        stateListAnimator = android.animation.AnimatorInflater.loadStateListAnimator(this@LibretaActivity, R.animator.presionar)
+        contentDescription = "Abrir el álbum de recuerdos"
+        isClickable = true
+        setOnClickListener { abrirAlbum() }
+    }
+
+    /** «¡Lo hicieron!»: una hoja encima de la libreta que pide la foto y una línea. */
+    private fun pedirFoto(plan: Plan) {
+        planDeCapa = plan
+        fotoLista = null
+        val tinta = getColor(Libreta.tinta(this).color)
+
+        val tarjeta = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = HojaDrawable(this@LibretaActivity)
+            elevation = dp(10).toFloat()
+            setPadding(margen + dp(4), linea.toInt(), dp(20), dp(18))
+            rotation = -0.8f
+            isClickable = true // que los toques no atraviesen la hoja
+        }
+        tarjeta.addView(letra("¡Lo hicieron!", 30f, R.color.tinta_lapiz, negrita = true))
+        tarjeta.addView(letra("«${plan.texto}»\nPeguen una foto en el álbum para recordarlo.", 20f, R.color.tinta_suave).apply {
+            (layoutParams as ViewGroup.MarginLayoutParams).topMargin = dp(4)
+        })
+
+        // La polaroid vacía: se toca para elegir la foto.
+        val lado = dp(176)
+        val polaroid = FrameLayout(this).apply {
+            setBackgroundColor(getColor(R.color.polaroid))
+            setPadding(dp(10), dp(10), dp(10), dp(30))
+            elevation = dp(3).toFloat()
+            rotation = 2.2f
+            contentDescription = "Elegir una foto"
+            isClickable = true
+            setOnClickListener { elegirFoto() }
+        }
+        vistaFoto = ImageView(this).apply {
+            setBackgroundColor(getColor(R.color.foto_vacia))
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        polaroid.addView(vistaFoto, FrameLayout.LayoutParams(lado, lado))
+        avisoFoto = letra("+ elegir foto", 22f, R.color.tinta_suave, negrita = true).apply {
+            gravity = Gravity.CENTER
+            layoutParams = FrameLayout.LayoutParams(lado, lado)
+        }
+        polaroid.addView(avisoFoto)
+        tarjeta.addView(polaroid, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.CENTER_HORIZONTAL; topMargin = dp(18); bottomMargin = dp(10)
+        })
+
+        val campo = EditText(this).apply {
+            background = null
+            typeface = Papel.letra(this@LibretaActivity)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            setTextColor(tinta)
+            setHintTextColor(getColor(R.color.tinta_guia))
+            hint = "Una línea para recordarlo…"
+            includeFontPadding = false
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            isSingleLine = true
+            filters = arrayOf(InputFilter.LengthFilter(Album.MAX_LINEA))
+            minHeight = linea.toInt()
+            setPadding(0, 0, 0, dp(4))
+        }
+        tarjeta.addView(campo)
+
+        botonPegar = boton("Pegar en el álbum") { pegar(campo.text.toString()) }.apply { isEnabled = false; alpha = 0.45f }
+        tarjeta.addView(botonPegar)
+        tarjeta.addView(letra("Ahora no", 19f, R.color.tinta_suave, negrita = true).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            gravity = Gravity.CENTER
+            minHeight = dp(48)
+            isClickable = true
+            setOnClickListener { cerrarCapa() }
+        })
+        tarjeta.addView(letra("Puedes pegarla después tocando el plan tachado.", 17f, R.color.tinta_guia).apply { gravity = Gravity.CENTER })
+
+        val desplazable = ScrollView(this).apply {
+            isFillViewport = true
+            isVerticalScrollBarEnabled = false
+            addView(FrameLayout(this@LibretaActivity).apply {
+                addView(tarjeta, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER).apply {
+                    setMargins(dp(22), dp(24), dp(22), dp(24))
+                })
+            })
+        }
+        val nueva = FrameLayout(this).apply {
+            setBackgroundColor(0x73000000)
+            elevation = dp(30).toFloat() // por encima del marco de la libreta, que también flota
+            isClickable = true
+            setOnClickListener { cerrarCapa() }
+            addView(desplazable)
+        }
+        capa = nueva
+        escritorio.addView(nueva, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        atrasCierraTapa(false); atrasCierraTapa(true) // «atrás» ya pasa por la hoja
+
+        if (Papel.conMovimiento()) {
+            nueva.alpha = 0f
+            nueva.animate().alpha(1f).setDuration(200).setInterpolator(Papel.salida).start()
+            tarjeta.translationY = dp(40).toFloat()
+            tarjeta.alpha = 0f
+            tarjeta.animate().translationY(0f).alpha(1f).setDuration(260).setInterpolator(Papel.salida).start()
+        }
+    }
+
+    private fun cerrarCapa() {
+        val c = capa ?: return
+        capa = null; planDeCapa = null; fotoLista = null; vistaFoto = null; avisoFoto = null; botonPegar = null
+        currentFocus?.let { getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(it.windowToken, 0) }
+        if (tapa?.abierta != true) atrasCierraTapa(false)
+        if (!Papel.conMovimiento()) { escritorio.removeView(c); return }
+        c.isClickable = false
+        c.animate().alpha(0f).setDuration(160).setInterpolator(Papel.salida).withEndAction { escritorio.removeView(c) }.start()
+    }
+
+    private fun elegirFoto() {
+        val pedir = if (android.os.Build.VERSION.SDK_INT >= 33) Intent(android.provider.MediaStore.ACTION_PICK_IMAGES)
+        else Intent(Intent.ACTION_GET_CONTENT).apply { addCategory(Intent.CATEGORY_OPENABLE) }
+        pedir.type = "image/*"
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(pedir, ELEGIR_FOTO)
+        } catch (e: android.content.ActivityNotFoundException) {
+            avisoFoto?.text = "No encontré la galería"
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != ELEGIR_FOTO || resultCode != RESULT_OK) return
+        // Algunos selectores devuelven la foto en clipData aunque se pida una sola.
+        val uri = data?.data ?: data?.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri ?: return
+        avisoFoto?.text = "Revelando…"
+        avisoFoto?.visibility = View.VISIBLE
+        trabajo.execute {
+            val bytes = Album.comprimir(this, uri)
+            val vista = bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+            runOnUiThread {
+                if (capa == null) return@runOnUiThread
+                if (bytes == null || vista == null) { avisoFoto?.text = "Esa foto no se pudo abrir"; return@runOnUiThread }
+                fotoLista = bytes
+                vistaFoto?.setImageBitmap(vista)
+                avisoFoto?.visibility = View.GONE
+                if (Papel.conMovimiento()) {
+                    vistaFoto?.alpha = 0f
+                    vistaFoto?.animate()?.alpha(1f)?.setDuration(500)?.setInterpolator(Papel.salida)?.start()
+                }
+                botonPegar?.apply { isEnabled = true; animate().alpha(1f).setDuration(150).start() }
+            }
+        }
+    }
+
+    private fun pegar(texto: String) {
+        val plan = planDeCapa ?: return
+        val foto = fotoLista ?: return
+        // Si el tachado todavía no volvió de Firestore, se cuenta con la hora local.
+        val actual = ultimosPlanes.find { it.id == plan.id }?.takeIf { it.hecho != null } ?: plan
+        val lista = ultimosPlanes.filter { it.id != plan.id } + actual
+        Album.pegar(this, actual, Album.numeroDeBoleto(lista, plan.id), foto, texto)
+        conRecuerdo = conRecuerdo + plan.id
+        cerrarCapa()
+        abrirAlbum(plan.id, recien = true)
     }
 
     // --- Piezas -----------------------------------------------------------------------
@@ -402,4 +640,8 @@ class LibretaActivity : Activity() {
     }
 
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+
+    companion object {
+        private const val ELEGIR_FOTO = 41
+    }
 }

@@ -49,6 +49,7 @@ class MainActivity : Activity() {
     private var ultimoEnvio: WorkInfo? = null
     private var ocultarResultado = false
     private var falloSuscripcion = false
+    private var escuchaFotos: com.google.firebase.firestore.ListenerRegistration? = null
     private val fotosPrefs by lazy { getSharedPreferences("fotos", MODE_PRIVATE) }
     private val envios by lazy {
         WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(EnviarToqueWorker.ENVIO_MANUAL)
@@ -59,7 +60,7 @@ class MainActivity : Activity() {
         mostrarEnvio()
     }
     private val observarFotos = SharedPreferences.OnSharedPreferenceChangeListener { _, clave ->
-        if (clave == "estado" || clave == "ultima_quitada") recargar()
+        if (clave == "estado" || clave == "ultima_quitada" || clave == "sincronizadas") recargar()
     }
     private val tic = object : Runnable {
         override fun run() {
@@ -107,6 +108,7 @@ class MainActivity : Activity() {
         val contexto = applicationContext
         trabajo.execute {
             Fotos.sembrar(contexto)
+            FotosCompartidas.sincronizar(contexto)
             principal.post { if (!isDestroyed) recargar() }
         }
     }
@@ -128,6 +130,8 @@ class MainActivity : Activity() {
         super.onStart()
         envios.observeForever(observarEnvios)
         fotosPrefs.registerOnSharedPreferenceChangeListener(observarFotos)
+        // Con la libreta vinculada, «Nuestros recuerdos» es el mismo en los dos celulares.
+        escuchaFotos = FotosCompartidas.escuchar(this)
     }
 
     override fun onResume() {
@@ -148,6 +152,8 @@ class MainActivity : Activity() {
     override fun onStop() {
         envios.removeObserver(observarEnvios)
         fotosPrefs.unregisterOnSharedPreferenceChangeListener(observarFotos)
+        escuchaFotos?.remove(); escuchaFotos = null
+        FotosCompartidas.dejarDeEscuchar()
         super.onStop()
     }
 
@@ -379,6 +385,7 @@ class MainActivity : Activity() {
                 .putString("estado", texto).putBoolean("error", error)
                 .putLong("estado_hasta", if (error) Long.MAX_VALUE else System.currentTimeMillis() + 5000).apply()
             CarruselWidget.refrescar(contexto)
+            FotosCompartidas.sincronizar(contexto)
         }
     }
 
@@ -404,6 +411,7 @@ class MainActivity : Activity() {
             .setMessage("Puedes deshacerlo. No se borra ninguna foto de tu galería.")
             .setPositiveButton("Quitar") { _, _ ->
                 if (Fotos.quitar(this, foto)) {
+                    FotosCompartidas.quitar(this, foto)
                     guardarEstadoFotos("Foto quitada", duradero = true)
                     CarruselWidget.refrescar(this)
                 } else guardarEstadoFotos("No se pudo quitar. Inténtalo de nuevo.", error = true)
@@ -432,9 +440,12 @@ class MainActivity : Activity() {
             visibility = if (deshacer) View.VISIBLE else View.GONE
             text = if (error) "Reintentar" else "Deshacer"
             setOnClickListener {
+                // Primero se avisa a Firestore, para que la sincronización no la vuelva a quitar.
+                Fotos.ultimaQuitada(this@MainActivity)?.let { FotosCompartidas.restaurar(this@MainActivity, it.name) }
                 if (Fotos.deshacer(this@MainActivity)) {
                     guardarEstadoFotos("Foto restaurada")
                     CarruselWidget.refrescar(this@MainActivity)
+                    FotosCompartidas.sincronizar(this@MainActivity)
                 } else guardarEstadoFotos("No se pudo restaurar la foto. Inténtalo de nuevo.", error = true)
                 recargar()
             }

@@ -15,4 +15,13 @@
     <color name="tinta_suave">#6E655A</color>
     <color name="tinta_guia">#9C9384</color>
     <color name="sello">#B3261E</color>
+    <!-- El álbum de recortes -->
+    <color name="kraft">#CDB28A</color>
+    <color name="kraft_fibra">#9E8160</color>
+    <color name="polaroid">#FBFAF6</color>
+    <color name="foto_vacia">#E4DED2</color>
+    <color name="cinta_miel">#E9D27A</color>
+    <color name="cinta_menta">#A8D5C2</color>
+    <color name="boleto">#F2E3C6</color>
+    <color name="boleto_tinta">#8A3B2E</color>
 </resources>

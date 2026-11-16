@@ -39,6 +39,8 @@ class PlanView(context: Context, plan: Plan) : View(context) {
 
     /** Qué hacer cuando la persona termina de tachar (true) o pide quitar la raya (false). */
     var alTachar: ((Plan, Boolean) -> Unit)? = null
+    /** Tocar un plan ya tachado abre su página del álbum. */
+    var alTocar: ((Plan) -> Unit)? = null
 
     private val linea = Papel.linea(context)
     private val margen = Papel.margen(context)
@@ -281,6 +283,7 @@ class PlanView(context: Context, plan: Plan) : View(context) {
     /** Para TalkBack: tocar dos veces tacha (no hay forma de arrastrar con el lector). */
     override fun performClick(): Boolean {
         super.performClick()
+        if (plan.hecho != null) alTocar?.invoke(plan)
         return true
     }
 

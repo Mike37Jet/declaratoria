@@ -32,7 +32,7 @@ object Fotos {
         context.assets.list("photos").orEmpty()
             .filter { it.first().isDigit() && it.endsWith(".jpg") }
             .sorted()
-            .forEach { nombre -> guardar(context, "0000000000000-$nombre") { context.assets.open("photos/$nombre") } }
+            .forEach { nombre -> guardar(context, "$PREFIJO_SEMILLA$nombre") { context.assets.open("photos/$nombre") } }
         prefs.edit().putBoolean("sembradas", true).apply()
     }
 
@@ -70,12 +70,45 @@ object Fotos {
     fun reducida(foto: File, lado: Int, config: Bitmap.Config = Bitmap.Config.ARGB_8888): Bitmap? =
         decodificar(lado, config) { foto.inputStream() }
 
+    private const val PREFIJO_SEMILLA = "0000000000000-"
+
+    /** Las fotos de la página que trae la app: están en los dos celulares, no hace falta subirlas. */
+    fun esSemilla(nombre: String) = nombre.startsWith(PREFIJO_SEMILLA)
+
+    /** Vuelve a poner una foto de la página (cuando el otro la restauró). */
+    fun resembrar(context: Context, nombre: String): Boolean {
+        val asset = "photos/" + nombre.removePrefix(PREFIJO_SEMILLA).removeSuffix(".jpg") + ".jpg"
+        return guardar(context, nombre.removeSuffix(".jpg") + ".jpg") { context.assets.open(asset) }
+    }
+
+    /** ¿Este celular la quitó y aún se puede deshacer? */
+    fun apartada(context: Context, nombre: String) = File(carpeta(context), "$nombre.jpg.quitada").exists()
+
+    /** La quitó el otro: aquí se borra la copia sin ofrecer deshacer. */
+    fun borrarCopia(foto: File) { foto.delete() }
+
+    /** Guarda una foto que llegó del otro celular (ya viene derecha y comprimida). */
+    fun guardarBytes(context: Context, nombre: String, bytes: ByteArray): Boolean = try {
+        escribir(File(carpeta(context), nombre)) { it.write(bytes) }
+        true
+    } catch (e: Exception) {
+        Log.w("Fotos", "No se pudo guardar $nombre", e)
+        false
+    }
+
+    /** Se escribe aparte y se renombra al final: nadie (ni la sincronización) ve una foto a medias. */
+    private fun escribir(destino: File, llenar: (java.io.OutputStream) -> Unit) {
+        val temporal = File(destino.parentFile, destino.name + ".parcial")
+        temporal.outputStream().use(llenar)
+        if (!temporal.renameTo(destino)) { temporal.delete(); throw java.io.IOException("No se pudo renombrar ${destino.name}") }
+    }
+
     private fun guardar(context: Context, nombre: String, abrir: () -> InputStream?): Boolean = try {
         val giro = abrir()?.use { giroExif(ExifInterface(it)) } ?: 0
         val bitmap = decodificar(LADO_GUARDADO, Bitmap.Config.ARGB_8888, abrir) ?: return false
         val derecha = if (giro == 0) bitmap else
             Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(giro.toFloat()) }, true)
-        File(carpeta(context), nombre).outputStream().use { derecha.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+        escribir(File(carpeta(context), nombre)) { derecha.compress(Bitmap.CompressFormat.JPEG, 88, it) }
         true
     } catch (e: Exception) {
         Log.w("Fotos", "No se pudo guardar $nombre", e)

@@ -42,6 +42,11 @@
             android:theme="@style/TemaLibreta"
             android:windowSoftInputMode="adjustResize" />
         <activity
+            android:name=".libreta.AlbumActivity"
+            android:exported="false"
+            android:label="Nuestro álbum"
+            android:theme="@style/TemaLibreta" />
+        <activity
             android:name=".ElegirTemaActivity"
             android:exported="true"
             android:label="@string/elegir_diseno">
