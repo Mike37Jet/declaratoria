@@ -85,17 +85,7 @@ class MainActivity : Activity() {
         }
         boleto = findViewById(R.id.boleto)
         findViewById<View>(R.id.poner_widget).setOnClickListener { elegirWidget() }
-        findViewById<TextView>(R.id.actualizar).apply {
-            val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
-            val lado = (textSize * 1.3f).toInt()
-            val icono = getDrawable(R.drawable.ic_descargar)!!.mutate().apply { setTint(currentTextColor); setBounds(0, 0, lado, lado) }
-            val leyenda = getString(R.string.actualizar) + if (version != null) " · tienes la $version" else ""
-            text = android.text.SpannableStringBuilder()
-                .append("·", android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_CENTER), 0)
-                .append("  ").append(leyenda)
-            contentDescription = leyenda
-            setOnClickListener { actualizarApp() }
-        }
+        findViewById<View>(R.id.actualizar).setOnClickListener { actualizarApp() }
         findViewById<View>(R.id.ayuda).setOnClickListener { mostrarAyuda() }
         findViewById<View>(R.id.mandar_toque).apply {
             setOnClickListener { mandarToque() }
@@ -153,6 +143,23 @@ class MainActivity : Activity() {
         mostrarCartelera()
         mostrarUltimoRecibido()
         ContadorWidget.actualizarTodos(this)
+        mostrarActualizacion()
+        Actualizacion.consultar(this) { principal.post { if (!isDestroyed) mostrarActualizacion() } }
+    }
+
+    /** «Actualizar la app» solo se ve cuando en GitHub hay una versión más nueva que la instalada. */
+    private fun mostrarActualizacion() {
+        val boton = findViewById<TextView>(R.id.actualizar)
+        val nueva = Actualizacion.nueva(this)
+        boton.visibility = if (nueva == null) View.GONE else View.VISIBLE
+        if (nueva == null) return
+        val lado = (boton.textSize * 1.3f).toInt()
+        val icono = getDrawable(R.drawable.ic_descargar)!!.mutate().apply { setTint(boton.currentTextColor); setBounds(0, 0, lado, lado) }
+        val leyenda = "Hay una versión nueva: $nueva · Actualizar"
+        boton.text = android.text.SpannableStringBuilder()
+            .append("·", android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_CENTER), 0)
+            .append("  ").append(leyenda)
+        boton.contentDescription = leyenda
     }
 
     override fun onPause() {

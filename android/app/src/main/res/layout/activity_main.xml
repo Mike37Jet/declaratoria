@@ -28,6 +28,22 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
+        <!-- Hay una versión nueva: franja dorada, lo primero que se ve. Baja el APK del link fijo de GitHub.
+             Solo aparece cuando la publicada es más nueva que la instalada (Actualizacion.kt). -->
+        <Button
+            android:id="@+id/actualizar"
+            style="@style/AccionTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="13dp"
+            android:background="@drawable/franja_actualizar"
+            android:minHeight="55dp"
+            android:text="@string/actualizar"
+            android:textColor="@color/cinema"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <com.roguelito.rommicines.Boleto
             android:id="@+id/boleto"
             android:layout_width="match_parent"
@@ -254,14 +270,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="@string/anadir_widget" />
-
-        <!-- Baja el APK de la última versión publicada (el link fijo de GitHub). -->
-        <Button
-            android:id="@+id/actualizar"
-            style="@style/AccionTexto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/actualizar" />
     </LinearLayout>
 </ScrollView>
