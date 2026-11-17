@@ -3,6 +3,11 @@ name: Deploy a GitHub Pages
 on:
   push:
     branches: [main]
+    # La app de Android y el servidor de avisos no cambian la página: no hace falta volver a publicarla.
+    paths-ignore:
+      - "android/**"
+      - "servidor/**"
+      - "**.md"
   workflow_dispatch:
 
 permissions:
