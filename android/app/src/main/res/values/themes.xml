@@ -55,4 +55,24 @@
         <item name="android:colorAccent">@color/tapa_tela</item>
         <item name="android:textColor">@color/tinta_lapiz</item>
     </style>
+    <!-- El tablero de corcho: una pared clara con el corcho colgado. -->
+    <style name="TemaTablero" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowBackground">@color/corcho_pared</item>
+        <item name="android:statusBarColor">@color/corcho_pared</item>
+        <item name="android:navigationBarColor">@color/corcho_pared</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:colorAccent">@color/chincheta_roja</item>
+        <item name="android:textColor">@color/corcho_tinta</item>
+    </style>
+    <!-- La notita que el widget de la libreta abre encima de la pantalla de inicio (firmar una propuesta). -->
+    <style name="TemaNotaWidget" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Translucent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:textColor">@color/tinta_lapiz</item>
+    </style>
 </resources>

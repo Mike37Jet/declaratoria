@@ -5,7 +5,7 @@ rules_version = '2';
 //
 // - parejas/{p}: los dos miembros y sus nombres/tintas. Solo los miembros la leen.
 //   Para unirse hace falta el id, que solo se conoce con el código (codigos/{codigo}).
-// - parejas/{p}/... (planes, y más adelante recuerdos y fotos): solo los miembros.
+// - parejas/{p}/... (planes, recuerdos, fotos, tablero): solo los miembros.
 service cloud.firestore {
   match /databases/{database}/documents {
 

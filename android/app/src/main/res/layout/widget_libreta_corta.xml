@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  La hoja de la libreta en tamaño bajo (2×1, 3×1, 4×1): solo los renglones, sin cabecera. El papel, la cabecera y los renglones se dibujan como
+  imagen (letra Caveat); la lista se desliza con todos los planes pendientes. Medidas en proporción áurea:
+  cabecera de 55 dp, renglones de 34 dp, botones de 34 dp, márgenes de 13 y 8 dp.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <ImageView android:id="@+id/papel" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:importantForAccessibility="no" android:scaleType="fitXY" />
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        <FrameLayout android:id="@+id/cabecera" android:visibility="gone" android:layout_width="match_parent" android:layout_height="55dp">
+            <ImageView android:id="@+id/titulo" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:scaleType="fitXY" />
+            <ImageView android:id="@+id/nuevo" android:layout_width="34dp" android:layout_height="34dp"
+                android:layout_gravity="end|center_vertical" android:layout_marginEnd="13dp"
+                android:background="@drawable/boton_libreta_widget" android:contentDescription="Escribir un plan nuevo"
+                android:padding="8dp" android:src="@drawable/ic_libreta_mas" android:tint="@color/tinta_lapiz" />
+        </FrameLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+            <ListView android:id="@+id/lista" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:divider="@null" android:dividerHeight="0dp" android:listSelector="@android:color/transparent"
+                android:scrollbars="none" android:fadingEdgeLength="21dp" android:requiresFadingEdge="vertical" />
+            <ImageView android:id="@+id/vacio" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:scaleType="fitStart" android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- Encima: los agujeros del anillado y la raya roja del margen (no reciben toques). -->
+    <ImageView android:id="@+id/anillado" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:importantForAccessibility="no" android:scaleType="fitXY" />
+</FrameLayout>

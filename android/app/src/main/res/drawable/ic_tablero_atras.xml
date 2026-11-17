@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flecha atrás (Phosphor Icons «arrow-left», light, MIT): volver desde el tablero. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="256" android:viewportHeight="256">
+    <path android:pathData="M216,128L40,128M112,56L40,128L112,200" android:strokeColor="#FF000000"
+        android:strokeWidth="12" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

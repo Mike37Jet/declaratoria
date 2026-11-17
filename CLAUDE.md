@@ -27,11 +27,16 @@ Widget del contador ([ContadorWidget.kt](android/app/src/main/java/com/roguelito
 con tres diseños según el tamaño: mini (2×1, 1×1), franja (3×1, 4×1) y completo (4×2).
 Los umbrales están en `COMPLETO` / `FRANJA` / `MINI` (en dp; un 2×1 mide ~180 dp).
 
-El contador tiene 10 diseños ([Tema.kt](android/app/src/main/java/com/roguelito/rommicines/Tema.kt)),
+El contador tiene 20 diseños ([Tema.kt](android/app/src/main/java/com/roguelito/rommicines/Tema.kt)),
 cada widget el suyo, y se eligen en `ElegirTemaActivity` (ajustes del widget o «Añadir widget» en la app).
 Cada diseño tiene sus tres layouts `widget_<tema>.xml`, `_franja` y `_mini` con los mismos ids
 (un widget no puede cambiar de fuente en tiempo de ejecución). El ♥ va como `♥&#xFE0E;` para que
 no salga como emoji y tome el color del diseño.
+Los 10 de estilo Apple / One UI (Vidrio, Anillo, Puntos, Papel, Tinta, Transparente, Barra Now, Pastel,
+Bloques, Coral) se generan con `python3 android/herramientas/generar_temas_nuevos.py android/app/src/main/res`:
+se cambian en el script, no a mano. Márgenes en escala áurea (5 · 8 · 13 · 21 dp): sin cajas: completo 21, franja y mini 13; con cajas (Bloques, Cine, Cielo, Neón, Material, Azul): completo 13 afuera y 8 entre cajas, franja y mini 8 y 5 (`PADDING` en el script; los diez originales, a mano). Letra en escala áurea de dos bases: 8 · 10 · 13 · 16 · 21 · 26 · 34 · 42 · 55 sp (`ESCALA_LETRA`; el ♥ del latido crece por pasos de esa escala, ver `Tema.kt`). Vidrio líquido lleva todo en φ (botones de 34 dp, «Toque» φ veces «Abrir página», botón de la franja 34×55). Anillo y Puntos se pintan como imagen (`Graficos.kt`), Barra Now usa un
+ProgressBar; los tres leen `Juntos.mes()` (mes juntos por fechas del calendario, «faltan N días para X meses»).
+Las esquinas de los marcos usan `@dimen/radio_widget` (en Android 12+ el radio del launcher, para que no recorte el borde).
 
 La **libreta compartida** vive en `android/.../libreta/` (`LibretaActivity`, datos en `Libreta.kt`):
 Firestore + acceso anónimo + código de 6 letras para unir el segundo celular. Las reglas están en
@@ -60,16 +65,35 @@ La **pantalla principal** es una taquilla de cine ([Taquilla.kt](android/app/src
 en una tira de película horizontal y la «cartelera» lee la misma copia local que el widget de la libreta.
 El último toque recibido se guarda aparte (`Toques.ultimoRecibido`). El nombre se cambia desde Ayuda.
 
-El **widget de la libreta** (`libreta/LibretaWidget.kt`) se dibuja entero como imagen (papel, renglones,
-Caveat) porque un widget no admite fuentes propias. Lee una copia local (prefs «libreta_widget») que deja
-`LibretaActivity.pintar` y parchan los avisos del otro celular (`LibretaWidget.alAviso`); no lee Firestore.
-Mini: el próximo plan (en dos renglones si no cabe); franja: el próximo y «n/100»; completo: título y hasta 3 planes.
+El **widget de la libreta** (`libreta/LibretaWidget.kt`) es una lista que se desliza con todos los planes pendientes
+(firmados y por firmar; los tachados no salen), servida por `LibretaWidgetServicio`. Cada renglón es una imagen
+(Caveat; un widget no admite fuentes propias) con su acción a la derecha: casilla (tachar), pluma (firmar la
+propuesta del otro) o clip (propuesta tuya, espera firma). Los toques pasan por `AccionLibretaActivity`: firmar
+es una notita encima de la pantalla de inicio; tachar, abrir un plan y el «+» abren la libreta con un extra
+`accion`, y ella abre la tapa, baja al plan y tacha (sello + foto), firma o enfoca el renglón nuevo.
+Papel con grano, cantos de hojas y agujeros perforados (se ve el fondo); bajo 100 dp de alto no lleva cabecera
+(`widget_libreta_corta`). Medidas áureas: cabecera 55, renglón 34, letra 21/26. Lee una copia local
+(prefs «libreta_widget», con `mio` por plan) que deja `LibretaActivity.pintar` y parchan los avisos
+(`alAviso`) y la firma desde el widget (`firmadaAqui`); no lee Firestore. **No usar `setEmptyView`** con la
+imagen de «nada pendiente»: se colaba en los renglones y cada plan salía con la acción del siguiente.
 
-«Nuestros recuerdos» (pantalla principal y widget carrusel) se comparte cuando la libreta está
+«Nuestros recuerdos» (pantalla principal y tablero de corcho) se comparte cuando la libreta está
 vinculada ([FotosCompartidas.kt](android/app/src/main/java/com/roguelito/rommicines/FotosCompartidas.kt)):
 la lista liviana en `parejas/{p}/fotos` y cada foto aparte en `fotosDatos` (se baja una sola vez).
 Cada celular sigue leyendo su copia de `filesDir/fotos`; quitar marca `quitada` en vez de borrar.
 Las fotos de la página (`0000000000000-…`) no se suben: vienen en la app. Solo sincroniza con la app abierta.
+
+El **tablero de corcho** (`tablero/`: `Tablero.kt` datos, `DibujoTablero.kt` dibujo, `TableroView` arrastre,
+`TableroActivity`; se abre con «Tablero ▸» en la pantalla principal o tocando el widget) clava fotos de «Nuestros
+recuerdos» (con pie opcional) y notitas propias (amarilla, rosa, celeste) con chinchetas. Corcho claro de grano fino y
+marco blanco. Cada pieza guarda su centro como **fracción** del tablero, giro y `orden` (la última tocada va encima);
+se comparte en `parejas/{p}/tablero/{id}` (quitar marca `quitada`) y la copia local está en las prefs «tablero».
+Mientras nadie acomoda nada se arma solo con las 7 fotos más recientes (`automatico`); el primer cambio guarda ese
+acomodo (`Tablero.fijar`). El **widget de fotos es el tablero**: la clase sigue siendo `CarruselWidget` (y
+`carrusel_info.xml`) para no perder los widgets puestos, pero dibuja una sola imagen con `DibujoTablero.widget`
+(fuera del hilo principal) y muestra las piezas de más arriba que caben (`cabenEnWidget`: 2 en 2×2, 3 en 3×2, 4 en
+4×2, hasta 7), estiradas para llenar su forma (`estirar`). `CarruselWidget.refrescar` lo vuelve a dibujar.
+En los layouts de widget no se puede usar `<View>` suelto (la vista previa sale «Couldn't add widget»): `FrameLayout`.
 
 ## Cosas que no se ven en el código
 

@@ -3,16 +3,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/marco_perla" android:contentDescription="Mandar un toque" android:gravity="center"
-    android:orientation="vertical" android:padding="4dp">
+    android:orientation="vertical" android:padding="13dp">
     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:gravity="center_vertical"
         android:orientation="horizontal">
         <TextView android:id="@+id/abrir_pagina" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:contentDescription="Abrir la página de ROMMICINES" android:focusable="true" android:paddingEnd="6dp"
-            android:text="♥&#xFE0E;" android:fontFamily="serif" android:textColor="@color/perla_acento" android:textSize="12sp" />
+            android:text="♥&#xFE0E;" android:fontFamily="serif" android:textColor="@color/perla_acento" android:textSize="13sp" />
         <TextView android:id="@+id/linea" android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:ellipsize="end" android:includeFontPadding="false" android:maxLines="1" android:text="37 días · 05 h"
-            android:fontFamily="serif" android:textColor="@color/perla_acento" android:textSize="12sp" android:textStyle="italic" />
+            android:fontFamily="serif" android:textColor="@color/perla_acento" android:textSize="13sp" android:textStyle="italic" />
     </LinearLayout>
     <Chronometer android:id="@+id/minseg" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:includeFontPadding="false" android:fontFamily="serif" android:textColor="@color/perla_texto" android:textSize="20sp" />
+        android:includeFontPadding="false" android:fontFamily="serif" android:textColor="@color/perla_texto" android:textSize="21sp" />
 </LinearLayout>

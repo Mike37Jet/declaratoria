@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vista previa del tablero de corcho en la lista de widgets: dos polaroids y una notita. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_corcho">
+
+    <FrameLayout
+        android:layout_width="76dp"
+        android:layout_height="85dp"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="21dp"
+        android:background="@color/polaroid"
+        android:paddingStart="5dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="5dp"
+        android:paddingBottom="14dp"
+        android:rotation="-6">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="#E9A7B4" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="68dp"
+        android:layout_height="76dp"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="13dp"
+        android:layout_marginStart="21dp"
+        android:background="@color/polaroid"
+        android:paddingStart="5dp"
+        android:paddingTop="5dp"
+        android:paddingEnd="5dp"
+        android:paddingBottom="13dp"
+        android:rotation="4">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" android:background="#9CC3D9" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="76dp"
+        android:layout_height="62dp"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="21dp"
+        android:layout_marginBottom="13dp"
+        android:background="@color/nota_rosa"
+        android:fontFamily="casual"
+        android:paddingHorizontal="8dp"
+        android:paddingTop="13dp"
+        android:rotation="-3"
+        android:text="@string/tablero_vista_nota"
+        android:textColor="@color/corcho_tinta"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</FrameLayout>

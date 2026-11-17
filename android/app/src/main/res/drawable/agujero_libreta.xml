@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un agujero del anillado (vista previa del widget de la libreta). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="#FF1B1A22" />
+    <size android:width="10dp" android:height="10dp" />
+</shape>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: el mismo radio con que el launcher recorta el widget, para que el borde no se corte. -->
+<resources>
+    <dimen name="radio_widget">@android:dimen/system_app_widget_background_radius</dimen>
+    <dimen name="radio_widget_material">@android:dimen/system_app_widget_background_radius</dimen>
+    <dimen name="radio_widget_polaroid">@android:dimen/system_app_widget_background_radius</dimen>
+    <dimen name="radio_widget_perla">@android:dimen/system_app_widget_background_radius</dimen>
+    <dimen name="radio_widget_perla_interno">@android:dimen/system_app_widget_background_radius</dimen>
+    <dimen name="radio_widget_neon_interno">@android:dimen/system_app_widget_background_radius</dimen>
+</resources>

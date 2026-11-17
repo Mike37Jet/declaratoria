@@ -7,6 +7,10 @@
     <color name="tapa_etiqueta">#F3EAD3</color>
     <color name="elastico">#1C1C1C</color>
     <color name="hoja">#FBF6EA</color>
+    <!-- Widget de la libreta: canto de las hojas de abajo, grano del papel, orillas tostadas. -->
+    <color name="hoja_canto">#E6DCC6</color>
+    <color name="hoja_grano">#8A7556</color>
+    <color name="hoja_orilla">#33715A35</color>
     <color name="renglon">#C9D8E8</color>
     <color name="margen">#E58A8A</color>
     <color name="tinta_azul">#1F4E9C</color>

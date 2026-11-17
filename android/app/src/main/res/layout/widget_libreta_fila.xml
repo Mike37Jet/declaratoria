@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Un plan pendiente del widget: el renglón (imagen con la letra Caveat) y a la derecha su acción
+     (casilla para tachar, pluma para firmar, o el clip si espera la firma del otro). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <ImageView android:id="@+id/renglon" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:adjustViewBounds="true" android:scaleType="fitStart" />
+    <ImageView android:id="@+id/accion" android:layout_width="34dp" android:layout_height="34dp"
+        android:layout_gravity="end|bottom" android:layout_marginEnd="13dp" android:padding="8dp" />
+</FrameLayout>

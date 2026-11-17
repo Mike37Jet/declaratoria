@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Barra Now: pista gris y avance rosa hacia el próximo mes (redondeado en las dos puntas). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background"><shape><solid android:color="@color/barra_pista" /><corners android:radius="99dp" /></shape></item>
+    <item android:id="@android:id/progress"><scale android:scaleWidth="100%"><shape><solid android:color="@color/barra_rosa" /><corners android:radius="99dp" /></shape></scale></item>
+</layer-list>

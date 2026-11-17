@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ♥ del diseño Transparente. Se marca al instante al presionar y se suelta con un fundido corto. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android" android:exitFadeDuration="150">
+    <item android:state_pressed="true"><shape android:shape="oval"><solid android:color="@color/vidrio_presionado" /></shape></item>
+    <item><shape android:shape="oval"><solid android:color="@color/transparente" /></shape></item>
+</selector>

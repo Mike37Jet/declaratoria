@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El tablero de corcho: corcho claro de grano fino, marco blanco, polaroids y notitas de papel. -->
+<resources>
+    <color name="corcho">#DCC29B</color>
+    <color name="corcho_marco">#F4EDE2</color>
+    <color name="corcho_canto">#D9CBB4</color>
+    <color name="corcho_pared">#EFE7DA</color>
+    <color name="corcho_tinta">#5A3B2A</color>
+    <color name="corcho_tinta_suave">#8A6A45</color>
+    <color name="nota_amarilla">#FFF3A8</color>
+    <color name="nota_rosa">#FFC9D6</color>
+    <color name="nota_celeste">#C8ECF5</color>
+    <color name="chincheta_roja">#D64545</color>
+</resources>

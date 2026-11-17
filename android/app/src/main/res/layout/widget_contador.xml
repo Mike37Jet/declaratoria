@@ -7,7 +7,7 @@
     android:background="@drawable/marco"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:paddingHorizontal="9dp" android:paddingVertical="13dp">
 
     <TextView
         android:layout_width="wrap_content"
@@ -55,7 +55,7 @@
                 android:letterSpacing="0.1"
                 android:text="DÍAS"
                 android:textColor="@color/cream_soft"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="0dp"
@@ -86,7 +86,7 @@
                 android:letterSpacing="0.1"
                 android:text="HORAS"
                 android:textColor="@color/cream_soft"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="0dp"
@@ -117,7 +117,7 @@
                 android:letterSpacing="0.1"
                 android:text="MIN · SEG"
                 android:textColor="@color/cream_soft"
-                android:textSize="9sp" />
+                android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -139,7 +139,7 @@
             android:maxLines="1"
             android:text="@string/contador_pie"
             android:textColor="@color/cream_soft"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="italic" />
 
         <TextView
@@ -152,6 +152,6 @@
             android:paddingVertical="3dp"
             android:text="♥&#xFE0E;"
             android:textColor="@color/gold_light"
-            android:textSize="15sp" />
+            android:textSize="16sp" />
     </LinearLayout>
 </LinearLayout>

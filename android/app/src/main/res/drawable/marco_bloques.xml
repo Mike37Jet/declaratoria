@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bloques: tarjeta oscura para las fichas de color. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/bloques_fondo" /><corners android:radius="@dimen/radio_widget" /></shape>

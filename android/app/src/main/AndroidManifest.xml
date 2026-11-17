@@ -41,6 +41,20 @@
             android:label="@string/nuestra_libreta"
             android:theme="@style/TemaLibreta"
             android:windowSoftInputMode="adjustResize" />
+        <!-- Recibe los toques del widget de la libreta: firma encima de la pantalla de inicio o abre la libreta. -->
+        <activity
+            android:name=".libreta.AccionLibretaActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/TemaNotaWidget" />
+        <activity
+            android:name=".tablero.TableroActivity"
+            android:exported="false"
+            android:label="@string/carrusel_nombre"
+            android:theme="@style/TemaTablero"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".libreta.AlbumActivity"
             android:exported="false"
@@ -67,6 +81,12 @@
                 android:resource="@xml/libreta_info" />
         </receiver>
 
+        <!-- Los renglones (planes pendientes) del widget de la libreta. -->
+        <service
+            android:name=".libreta.LibretaWidgetServicio"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
         <receiver
             android:name=".CarruselWidget"
             android:exported="false"
@@ -89,10 +109,6 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".CarruselService"
-            android:exported="false"
-            android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <receiver
             android:name=".ContadorWidget"

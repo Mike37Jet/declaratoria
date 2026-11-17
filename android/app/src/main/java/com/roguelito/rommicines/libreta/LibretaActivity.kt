@@ -45,6 +45,10 @@ class LibretaActivity : Activity() {
     private val porEscribir = mutableListOf<PlanView>()
     private var hechos = -1
 
+    /** Lo que pidió el widget (tachar, firmar, abrir un plan o escribir uno nuevo), hasta que llegan los planes. */
+    private var porHacer: Pair<String, String?>? = null
+    private var campoNuevo: EditText? = null
+
     private var escuchaPlanes: ListenerRegistration? = null
     private var escuchaMiembros: ListenerRegistration? = null
     private var escuchaRecuerdos: ListenerRegistration? = null
@@ -91,7 +95,53 @@ class LibretaActivity : Activity() {
             insets
         }
         setContentView(escritorio)
+        tomarAccion(intent)
         mostrar()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        tomarAccion(intent)
+        if (hechos >= 0) aplicarAccion()
+    }
+
+    private fun tomarAccion(intent: Intent?) {
+        val accion = intent?.getStringExtra(AccionLibretaActivity.ACCION) ?: return
+        porHacer = accion to intent.getStringExtra(AccionLibretaActivity.PLAN)
+    }
+
+    /**
+     * Lo que pidió el widget, ya con los planes cargados: se abre la tapa, se baja hasta el plan y
+     * se tacha (con su sello y luego la foto), se firma (con la notita) o se deja listo el renglón nuevo.
+     */
+    private fun aplicarAccion() {
+        val (accion, id) = porHacer ?: return
+        if (planes == null) return
+        porHacer = null
+        val t = tapa
+        val espera = if (t != null && !t.abierta) { t.abrir(); 700L } else 0L
+        escritorio.postDelayed({
+            if (isFinishing) return@postDelayed
+            if (accion == AccionLibretaActivity.NUEVO) {
+                hoja?.fullScroll(View.FOCUS_DOWN)
+                campoNuevo?.let { campo ->
+                    campo.requestFocus()
+                    getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                        ?.showSoftInput(campo, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+                }
+                return@postDelayed
+            }
+            val plan = ultimosPlanes.firstOrNull { it.id == id } ?: return@postDelayed
+            vistas[plan.id]?.let { v ->
+                hoja?.smoothScrollTo(0, (v.top + (planes?.top ?: 0) - linea * 2).toInt().coerceAtLeast(0))
+            }
+            when (accion) {
+                AccionLibretaActivity.TACHAR ->
+                    if (plan.hecho == null && !plan.porFirmar) escritorio.postDelayed({ if (!isFinishing) tachar(plan, true) }, 350)
+                AccionLibretaActivity.FIRMAR -> if (plan.porFirmar) firmar(plan)
+            }
+        }, espera)
     }
 
     private fun mostrar() {
@@ -295,6 +345,7 @@ class LibretaActivity : Activity() {
     private fun renglonNuevo(): LinearLayout {
         val tinta = getColor(Libreta.tinta(this).color)
         val campo = escribir(tinta)
+        campoNuevo = campo
         val clip = BotonClip(this)
         val lapicero = BotonLapicero(this, tinta)
         fun ponerLetra(l: Lapicero) { campo.typeface = if (l.negrita) Papel.letraNegrita(this) else Papel.letra(this) }
@@ -389,6 +440,7 @@ class LibretaActivity : Activity() {
         hojaPapel?.manchas = Libreta.manchas(n)
         hechos = n
         LibretaWidget.guardar(this, lista)
+        aplicarAccion()
     }
 
     /** Al abrir la tapa, los planes nuevos del otro se escriben uno tras otro. */

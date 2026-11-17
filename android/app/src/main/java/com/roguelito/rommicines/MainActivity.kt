@@ -93,6 +93,9 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.abrir_libreta).setOnClickListener {
             startActivity(Intent(this, com.roguelito.rommicines.libreta.LibretaActivity::class.java))
         }
+        findViewById<View>(R.id.abrir_tablero).setOnClickListener {
+            startActivity(Intent(this, com.roguelito.rommicines.tablero.TableroActivity::class.java))
+        }
         findViewById<View>(R.id.ver_funcion).setOnClickListener {
             runCatching { Juntos.abrirPagina(this).send() }
         }
@@ -549,7 +552,7 @@ class MainActivity : Activity() {
     }
 
     private fun elegirWidget() {
-        val opciones = mutableListOf("Contador · tiempo juntos", "Carrusel · nuestras fotos", "Cambiar el diseño del contador")
+        val opciones = mutableListOf("Contador · tiempo juntos", "Tablero de corcho · nuestras fotos", "Cambiar el diseño del contador")
         if (!ContadorWidget.alarmasExactas(this)) opciones.add("Sincronizar la hora del contador")
         AlertDialog.Builder(this).setTitle("Añadir a tu pantalla de inicio")
             .setItems(opciones.toTypedArray()) { _, i ->
@@ -575,8 +578,8 @@ class MainActivity : Activity() {
         val temas = arrayOf("Enviar y responder", "Poner un widget", "Mis fotos", "Mi nombre", "Que los toques lleguen siempre")
         val pasos = arrayOf(
             getString(R.string.ayuda_toque) + "\n\nPara responder, toca ‘Un beso de vuelta’ en la notificación.",
-            "Toca ‘Añadir widget’ y elige contador o carrusel.\n\nSi no aparece la ventana, mantén pulsado el inicio del celular → Widgets → ROMMICINES.\n\nPara cambiar el diseño del contador (Cielo, Neón, Perla…): ‘Añadir widget’ → ‘Cambiar el diseño del contador’, o mantén presionado el widget y toca el lápiz.",
-            "Desliza la tira de película y toca ‘+’ al final para añadir fotos. Toca un fotograma para verlo o quitarlo del carrusel. Después puedes usar ‘Deshacer’.",
+            "Toca ‘Añadir widget’ y elige contador o tablero de corcho.\n\nSi no aparece la ventana, mantén pulsado el inicio del celular → Widgets → ROMMICINES.\n\nPara cambiar el diseño del contador (Cielo, Neón, Perla…): ‘Añadir widget’ → ‘Cambiar el diseño del contador’, o mantén presionado el widget y toca el lápiz.",
+            "Desliza la tira de película y toca ‘+’ al final para añadir fotos. Toca un fotograma para verlo o quitarlo. Después puedes usar ‘Deshacer’.\n\nEn ‘Tablero’ las clavan en el corcho junto con notitas: arrastra cada una a donde quieras y toca una para escribirle o quitarla.",
             "",
             "",
         )

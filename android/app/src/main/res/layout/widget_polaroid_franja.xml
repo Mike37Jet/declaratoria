@@ -3,30 +3,30 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/marco_polaroid" android:gravity="center_vertical" android:orientation="horizontal"
-    android:padding="6dp">
+    android:paddingHorizontal="10dp" android:paddingVertical="13dp">
         <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="3dp"
             android:layout_weight="1" android:gravity="center" android:orientation="vertical">
             <TextView android:id="@+id/dias" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:includeFontPadding="false" android:text="37" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="19sp" />
+                android:includeFontPadding="false" android:text="37" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="21sp" />
             <TextView android:id="@+id/dias_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:text="días" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="9sp" />
+                android:text="días" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="10sp" />
         </LinearLayout>
         <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="3dp"
             android:layout_weight="1" android:gravity="center" android:orientation="vertical">
             <TextView android:id="@+id/horas" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:includeFontPadding="false" android:text="05" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="19sp" />
+                android:includeFontPadding="false" android:text="05" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="21sp" />
             <TextView android:id="@+id/horas_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:text="horas" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="9sp" />
+                android:text="horas" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="10sp" />
         </LinearLayout>
         <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="3dp"
             android:layout_weight="1.6" android:gravity="center" android:orientation="vertical">
             <Chronometer android:id="@+id/minseg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:includeFontPadding="false" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="19sp" />
+                android:includeFontPadding="false" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta" android:textSize="21sp" />
             <TextView android:id="@+id/minseg_etiqueta" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1"
-                android:text="min · seg" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="9sp" />
+                android:text="min · seg" android:fontFamily="cursive" android:textColor="@color/polaroid_tinta_suave" android:textSize="10sp" />
         </LinearLayout>
     <TextView android:id="@+id/enviar_toque" android:layout_width="wrap_content" android:layout_height="match_parent"
             android:background="@drawable/boton_polaroid" android:contentDescription="Mandar un toque" android:gravity="center"
-            android:minWidth="40dp" android:paddingHorizontal="12dp" android:paddingVertical="3dp" android:layout_marginStart="3dp"
-            android:text="♥&#xFE0E;" android:textColor="@color/polaroid_corazon" android:textSize="15sp" />
+            android:minWidth="40dp" android:paddingHorizontal="12dp" android:paddingVertical="3dp" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
+            android:text="♥&#xFE0E;" android:textColor="@color/polaroid_corazon" android:textSize="16sp" />
 </LinearLayout>

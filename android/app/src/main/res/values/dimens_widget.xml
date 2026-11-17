@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Radio de las esquinas de los widgets. En Android 12+ (values-v31) se usa el del launcher,
+     que recorta los widgets con su propio radio: si el nuestro es menor, el borde se corta en las esquinas. -->
+<resources>
+    <dimen name="radio_widget">18dp</dimen>
+    <dimen name="radio_widget_material">24dp</dimen>
+    <dimen name="radio_widget_polaroid">6dp</dimen>
+    <dimen name="radio_widget_perla">14dp</dimen>
+    <dimen name="radio_widget_perla_interno">10dp</dimen>
+    <dimen name="radio_widget_neon_interno">16dp</dimen>
+</resources>

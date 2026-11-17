@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botón ♥ Toque de Bloques. Se marca al instante al presionar y se suelta con un fundido corto. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android" android:exitFadeDuration="150">
+    <item android:state_pressed="true"><shape><solid android:color="@color/bloques_boton_presionado" /><corners android:radius="99dp" /></shape></item>
+    <item><shape><solid android:color="@color/bloques_boton" /><corners android:radius="99dp" /></shape></item>
+</selector>

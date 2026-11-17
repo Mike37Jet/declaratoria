@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Papel: blanco hueso, como Calendario. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/papel_fondo" /><corners android:radius="@dimen/radio_widget" /></shape>

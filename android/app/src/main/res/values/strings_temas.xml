@@ -16,6 +16,15 @@
     <string name="perla_titulo">ROMMICINES</string>
     <string name="azul_titulo">✦ DESDE EL SÍ ✦</string>
     <string name="azul_pie">bajo las mismas estrellas</string>
+    <string name="vidrio_pie">♥&#xFE0E; Juntos</string>
+    <string name="anillo_pie">Juntos</string>
+    <string name="papel_pie">Rommina ♥&#xFE0E; Miguel</string>
+    <string name="tinta_pie">desde el sí · ♥&#xFE0E;</string>
+    <string name="transparente_pie">♥&#xFE0E; Rommina y Miguel</string>
+    <string name="barra_pie">Juntos desde el sí</string>
+    <string name="pastel_pie">♥&#xFE0E; Rommina y Miguel</string>
+    <string name="bloques_pie">Juntos ♥&#xFE0E;</string>
+    <string name="coral_pie">Juntos desde el sí</string>
     <string name="elegir_diseno">Diseño del contador</string>
     <string name="elegir_diseno_ayuda">Toca uno para usarlo. Puedes cambiarlo cuando quieras.</string>
 </resources>

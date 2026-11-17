@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- El tablero de corcho (antes carrusel; el nombre del archivo se queda para no perder los widgets puestos). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/carrusel_descripcion"
-    android:initialLayout="@layout/widget_carrusel"
-    android:previewLayout="@layout/widget_carrusel"
+    android:initialLayout="@layout/widget_tablero"
+    android:previewLayout="@layout/widget_tablero_vista"
     android:minWidth="180dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"

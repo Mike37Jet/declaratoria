@@ -5,13 +5,13 @@
         <shape>
             <solid android:color="@color/neon_fondo" />
             <stroke android:width="5dp" android:color="@color/neon_rosa_halo" />
-            <corners android:radius="18dp" />
+            <corners android:radius="@dimen/radio_widget" />
         </shape>
     </item>
     <item android:bottom="2dp" android:left="2dp" android:right="2dp" android:top="2dp">
         <shape>
             <stroke android:width="2dp" android:color="@color/neon_rosa" />
-            <corners android:radius="16dp" />
+            <corners android:radius="@dimen/radio_widget_neon_interno" />
         </shape>
     </item>
 </layer-list>

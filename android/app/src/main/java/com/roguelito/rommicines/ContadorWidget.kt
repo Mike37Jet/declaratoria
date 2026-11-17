@@ -199,7 +199,10 @@ class ContadorWidget : AppWidgetProvider() {
                 } else {
                     setViewVisibility(R.id.pie, View.GONE)
                 }
+                // Donde el pie va junto a la meta (Puntos), el toque reciente ocupa su lugar.
+                setViewVisibility(R.id.meta, if (toque != null && tema.pie == 0) View.GONE else View.VISIBLE)
                 reloj(t, tema.formatoReloj(t.horas))
+                delMes(context, tema, Vista.COMPLETO)
                 if (acciones) {
                     setOnClickPendingIntent(R.id.raiz, Juntos.abrirPagina(context))
                     setOnClickPendingIntent(R.id.enviar_toque, botonToque(context))
@@ -211,26 +214,29 @@ class ContadorWidget : AppWidgetProvider() {
             RemoteViews(context.packageName, tema.franja).apply {
                 numeros(t, tema)
                 reloj(t)
+                delMes(context, tema, Vista.FRANJA, latido)
                 if (acciones) {
                     setOnClickPendingIntent(R.id.raiz, Juntos.abrirPagina(context))
                     setOnClickPendingIntent(R.id.enviar_toque, botonToque(context))
                 }
                 setContentDescription(R.id.enviar_toque, Toques.preferido(context).frase)
                 // Se declara siempre: una actualización no revierte lo que ya no menciona.
-                latir(context, R.id.enviar_toque, tema, latido, tema.corazon, tema.latidoEnBoton, 15f, 24f)
+                latir(context, R.id.enviar_toque, tema, latido, tema.corazon, tema.latidoEnBoton, 16f, 26f, tema.escalaBoton)
             }
 
         private fun mini(context: Context, t: Juntos.Tiempo, tema: Tema, latido: Boolean = false, acciones: Boolean = true) =
             RemoteViews(context.packageName, tema.mini).apply {
                 val linea = "%d %s · %02d h".format(t.dias, if (t.dias == 1L) "día" else "días", t.horas)
                 setTextViewText(R.id.linea, linea)
+                numeros(t, tema)
                 reloj(t)
+                delMes(context, tema, Vista.MINI, latido)
                 if (acciones) {
                     setOnClickPendingIntent(R.id.raiz, botonToque(context))
                     setOnClickPendingIntent(R.id.abrir_pagina, Juntos.abrirPagina(context))
                 }
                 setContentDescription(R.id.raiz, "Enviar: ${Toques.preferido(context).frase}")
-                latir(context, R.id.abrir_pagina, tema, latido, tema.corazonSuelto, tema.latido, 12f, 18f)
+                latir(context, R.id.abrir_pagina, tema, latido, tema.corazonSuelto, tema.latido, 13f, 21f, tema.escalaSuelto)
             }
 
         /**
@@ -239,13 +245,31 @@ class ContadorWidget : AppWidgetProvider() {
          */
         private fun RemoteViews.latir(
             context: Context, corazon: Int, tema: Tema, latido: Boolean,
-            color: Int, colorLatido: Int, normal: Float, grande: Float,
+            color: Int, colorLatido: Int, normal: Float, grande: Float, escala: Float = 1f,
         ) {
-            setTextViewTextSize(corazon, TypedValue.COMPLEX_UNIT_SP, if (latido) grande else normal)
+            setTextViewTextSize(corazon, TypedValue.COMPLEX_UNIT_SP, (if (latido) grande else normal) * escala)
             setTextColor(corazon, context.getColor(if (latido) colorLatido else color))
             setTextViewText(corazon, if (latido) CORAZON else tema.simbolo)
             if (tema.destello != 0) {
                 setInt(R.id.raiz, "setBackgroundResource", if (latido) tema.destello else tema.marco)
+            }
+        }
+
+        /**
+         * Lo que depende del mes juntos: el texto de la meta, la barra y el anillo o los puntos.
+         * Los ids que un diseño no tiene se ignoran. En el latido, el punto de hoy crece.
+         */
+        private fun RemoteViews.delMes(context: Context, tema: Tema, vista: Vista, latido: Boolean = false) {
+            val mes = Juntos.mes()
+            setTextViewText(R.id.meta, mes.texto)
+            setProgressBar(R.id.barra, 1000, (mes.avance * 1000).toInt(), false)
+            when (tema.grafico) {
+                Grafico.ANILLO -> setImageViewBitmap(R.id.grafico, Graficos.anillo(context, mes.avance))
+                Grafico.PUNTOS -> setImageViewBitmap(
+                    R.id.grafico,
+                    Graficos.puntos(context, mes, columnas = if (vista == Vista.MINI) 8 else 16, latido = latido),
+                )
+                Grafico.NINGUNO -> {}
             }
         }
 

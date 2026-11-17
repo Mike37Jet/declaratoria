@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/hoja" />
-    <corners android:radius="16dp" />
-</shape>
+<!-- Vista previa del widget de la libreta: la hoja con el canto de las hojas de abajo asomando. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="@color/hoja_canto" /><corners android:radius="@dimen/radio_widget" /></shape></item>
+    <item android:bottom="3dp"><shape><solid android:color="@color/hoja" /><corners android:radius="@dimen/radio_widget" /></shape></item>
+</layer-list>

@@ -2,5 +2,5 @@
 <!-- Cielo: de celeste arriba a casi blanco abajo. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <gradient android:angle="270" android:startColor="@color/cielo_alto" android:endColor="@color/cielo_bajo" />
-    <corners android:radius="18dp" />
+    <corners android:radius="@dimen/radio_widget" />
 </shape>

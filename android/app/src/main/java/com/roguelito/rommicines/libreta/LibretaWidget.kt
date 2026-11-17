@@ -8,9 +8,16 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RadialGradient
 import android.graphics.RectF
+import android.graphics.Shader
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.TextPaint
@@ -21,15 +28,22 @@ import com.roguelito.rommicines.R
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 /**
- * La hoja de la libreta en la pantalla de inicio: los próximos planes, sin tachar.
- * Se dibuja como imagen (papel, renglones, margen y letra Caveat) porque un widget no puede
- * usar fuentes propias. Se lee de una copia local: la deja [guardar] al abrir la libreta
- * y la parchan los avisos del otro celular ([alAviso]).
+ * La hoja de la libreta en la pantalla de inicio: todos los planes pendientes (firmados y por firmar),
+ * en una lista que se desliza cuando no caben. Los tachados no aparecen.
  *
- * Tres tamaños: mini (2×1) el próximo plan; franja (3×1, 4×1) el próximo y la cuenta;
- * completo (4×2) hasta tres planes con título. Tocarlo abre la libreta; no se tacha desde aquí.
+ * Cada renglón se dibuja como imagen (letra Caveat, que un widget no puede usar como fuente) y lleva
+ * a la derecha su acción: la casilla para tachar, la pluma para firmar una propuesta del otro, o el
+ * clip si la propuesta es tuya y espera firma. Tocar el renglón abre la libreta en ese plan; el «+»
+ * de la cabecera abre la libreta en el renglón nuevo. Ver [LibretaWidgetServicio] y [AccionLibretaActivity].
+ *
+ * Se lee de una copia local: la deja [guardar] al abrir la libreta y la parchan los avisos del otro
+ * celular ([alAviso]) y la firma hecha desde el widget ([firmadaAqui]).
+ *
+ * Medidas en proporción áurea: cabecera de 55 dp, renglones de 34 dp, letra de 21 y 26 dp,
+ * márgenes de 13 y 8 dp.
  */
 class LibretaWidget : AppWidgetProvider() {
 
@@ -41,25 +55,37 @@ class LibretaWidget : AppWidgetProvider() {
         actualizar(context, manager, id)
     }
 
-    /** Lo que el widget necesita de un plan pendiente. */
-    data class Pendiente(val id: String, val texto: String, val tinta: Tinta, val porFirmar: Boolean)
+    /** Lo que el widget necesita de un plan pendiente. [mio]: lo escribí yo (no puedo firmarlo). */
+    data class Pendiente(val id: String, val texto: String, val tinta: Tinta, val porFirmar: Boolean, val mio: Boolean)
 
     data class Hoja(val vinculada: Boolean, val pendientes: List<Pendiente>, val hechos: Int)
 
     companion object {
         private const val PREFS = "libreta_widget"
-        private const val GUARDADOS = 12 // de sobra para los tres que se ven
+        private const val GUARDADOS = 100 // la meta: nunca hay más pendientes que esto
 
-        // Mismos umbrales (en dp) que el widget del contador.
-        private val COMPLETO = SizeF(250f, 100f)
-        private val FRANJA = SizeF(230f, 56f)
+        /** Con menos alto que esto (en dp) no cabe la cabecera: solo renglones. */
+        private const val CON_CABECERA = 100f
+
+        // Medidas en dp (escala áurea).
+        const val CABECERA = 55f
+        const val RENGLON = 34f
+        const val LETRA = 21f
+        const val TITULO = 26f
+        const val MARGEN = 34f   // la raya roja
+        const val SANGRIA = 8f   // de la raya a la letra
+        const val ANILLADO = 21f // la columna de los agujeros
+        const val BOTON = 34f
+        const val ORILLA = 13f
+        private const val AGUJERO = 5f // radio
 
         // ---- La copia local ----
 
         /** Lo llama la libreta cada vez que cambian los planes. */
         fun guardar(context: Context, planes: List<Plan>) {
+            val yo = Libreta.yo()
             val pendientes = planes.filter { it.hecho == null }.sortedBy { it.orden }
-                .map { Pendiente(it.id, it.texto, it.tinta, it.porFirmar) }
+                .map { Pendiente(it.id, it.texto, it.tinta, it.porFirmar, mio = yo != null && it.autor == yo) }
             escribir(context, Hoja(true, pendientes, planes.count { it.hecho != null }))
         }
 
@@ -70,7 +96,7 @@ class LibretaWidget : AppWidgetProvider() {
                 Evento.PLAN, Evento.PROPUESTA ->
                     if (h.pendientes.any { it.id == aviso.plan }) h
                     else h.copy(pendientes = h.pendientes + Pendiente(aviso.plan, aviso.texto,
-                        Tinta.dePersona(aviso.quien), aviso.evento == Evento.PROPUESTA))
+                        Tinta.dePersona(aviso.quien), aviso.evento == Evento.PROPUESTA, mio = false))
                 Evento.FIRMA -> h.copy(pendientes = h.pendientes.map { if (it.id == aviso.plan) it.copy(porFirmar = false) else it })
                 Evento.HECHO ->
                     if (h.pendientes.none { it.id == aviso.plan }) h
@@ -80,13 +106,22 @@ class LibretaWidget : AppWidgetProvider() {
             escribir(context, nueva.copy(vinculada = true))
         }
 
+        /** Se firmó desde el widget: la copia lo refleja al momento, sin esperar a Firestore. */
+        fun firmadaAqui(context: Context, plan: String) {
+            val h = leer(context)
+            escribir(context, h.copy(pendientes = h.pendientes.map { if (it.id == plan) it.copy(porFirmar = false) else it }))
+        }
+
         fun leer(context: Context): Hoja {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val lista = runCatching {
                 val a = JSONArray(p.getString("pendientes", "[]"))
                 (0 until a.length()).map { i ->
                     val o = a.getJSONObject(i)
-                    Pendiente(o.getString("id"), o.getString("texto"), Tinta.de(o.optString("tinta")), o.optBoolean("porFirmar"))
+                    Pendiente(o.getString("id"), o.getString("texto"), Tinta.de(o.optString("tinta")),
+                        // Una copia de antes no sabe de quién es: se toma como tuya para no ofrecer firmarla
+                        // (abrir la libreta una vez la vuelve a escribir con el dato).
+                        o.optBoolean("porFirmar"), o.optBoolean("mio", true))
                 }
             }.getOrDefault(emptyList())
             return Hoja(Libreta.pareja(context) != null, lista, p.getInt("hechos", 0))
@@ -96,7 +131,8 @@ class LibretaWidget : AppWidgetProvider() {
             val a = JSONArray()
             h.pendientes.take(GUARDADOS).forEach {
                 a.put(JSONObject().put("id", it.id).put("texto", it.texto)
-                    .put("tinta", if (it.tinta == Tinta.ROSA) "rosa" else "azul").put("porFirmar", it.porFirmar))
+                    .put("tinta", if (it.tinta == Tinta.ROSA) "rosa" else "azul")
+                    .put("porFirmar", it.porFirmar).put("mio", it.mio))
             }
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val antes = p.getString("pendientes", null) to p.getInt("hechos", -1)
@@ -109,25 +145,50 @@ class LibretaWidget : AppWidgetProvider() {
 
         fun actualizarTodos(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            manager.getAppWidgetIds(ComponentName(context, LibretaWidget::class.java))
-                .forEach { actualizar(context, manager, it) }
+            val ids = manager.getAppWidgetIds(ComponentName(context, LibretaWidget::class.java))
+            ids.forEach { actualizar(context, manager, it) }
+            @Suppress("DEPRECATION")
+            manager.notifyAppWidgetViewDataChanged(ids, R.id.lista)
         }
 
         private fun actualizar(context: Context, manager: AppWidgetManager, id: Int) {
             val (ancho, alto) = tamaño(context, manager, id)
             val hoja = leer(context)
-            val vistas = RemoteViews(context.packageName, R.layout.widget_libreta)
-            vistas.setImageViewBitmap(R.id.hoja, dibujar(context, hoja, ancho, alto))
-            vistas.setContentDescription(R.id.hoja, descripcion(hoja))
-            val abrir = PendingIntent.getActivity(context, 0,
-                Intent(context, LibretaActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            vistas.setOnClickPendingIntent(R.id.hoja, abrir)
-            manager.updateAppWidget(id, vistas)
+            val cabecera = alto >= CON_CABECERA
+            val v = RemoteViews(context.packageName, if (cabecera) R.layout.widget_libreta else R.layout.widget_libreta_corta)
+
+            v.setImageViewBitmap(R.id.papel, papel(context, ancho, alto))
+            v.setImageViewBitmap(R.id.anillado, anillado(context, ancho, alto))
+            if (cabecera) {
+                v.setImageViewBitmap(R.id.titulo, titulo(context, hoja, ancho))
+                v.setContentDescription(R.id.titulo, "Nuestras aventuras, ${hoja.hechos} de ${Libreta.META} hechos")
+                v.setOnClickPendingIntent(R.id.nuevo, AccionLibretaActivity.abrirLibreta(context, AccionLibretaActivity.NUEVO, null))
+                v.setOnClickPendingIntent(R.id.titulo, AccionLibretaActivity.abrirLibreta(context, null, null))
+            }
+
+            // La lista: el servicio dibuja un renglón por plan pendiente. La dirección lleva el ancho para que,
+            // al cambiar de tamaño, el sistema pida renglones nuevos.
+            val servicio = Intent(context, LibretaWidgetServicio::class.java)
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                .putExtra(LibretaWidgetServicio.ANCHO, ancho)
+            servicio.data = Uri.parse("libreta://widget/$id/${ancho.roundToInt()}")
+            @Suppress("DEPRECATION")
+            v.setRemoteAdapter(R.id.lista, servicio)
+            v.setPendingIntentTemplate(R.id.lista, AccionLibretaActivity.plantilla(context))
+            // El mensaje de «nada pendiente» se muestra a mano: como vista vacía de la lista (setEmptyView), su
+            // imagen se colaba en los renglones y cada plan salía con la acción del siguiente.
+            val nada = hoja.pendientes.isEmpty()
+            v.setViewVisibility(R.id.vacio, if (nada) android.view.View.VISIBLE else android.view.View.GONE)
+            v.setViewVisibility(R.id.lista, if (nada) android.view.View.GONE else android.view.View.VISIBLE)
+            if (nada) v.setImageViewBitmap(R.id.vacio, vacio(context, hoja, ancho))
+            v.setOnClickPendingIntent(R.id.vacio, AccionLibretaActivity.abrirLibreta(context,
+                if (hoja.vinculada) AccionLibretaActivity.NUEVO else null, null))
+            v.setContentDescription(R.id.vacio, descripcion(hoja))
+            manager.updateAppWidget(id, v)
         }
 
         /** El tamaño actual en dp (en vertical, el primero que da el launcher). */
-        private fun tamaño(context: Context, manager: AppWidgetManager, id: Int): Pair<Float, Float> {
+        fun tamaño(context: Context, manager: AppWidgetManager, id: Int): Pair<Float, Float> {
             val o = manager.getAppWidgetOptions(id)
             @Suppress("DEPRECATION")
             val tamaños = o.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
@@ -141,157 +202,163 @@ class LibretaWidget : AppWidgetProvider() {
 
         fun descripcion(h: Hoja): String = when {
             !h.vinculada -> "Nuestra libreta. Toca para abrirla"
+            h.pendientes.isEmpty() && h.hechos == 0 -> "Nuestra libreta, sin planes todavía. Toca para escribir el primero"
             h.pendientes.isEmpty() -> "Nuestra libreta: ${h.hechos} de ${Libreta.META} planes hechos, nada pendiente"
-            else -> "Nuestra libreta, ${h.hechos} de ${Libreta.META}. Próximos planes: " +
-                h.pendientes.take(3).joinToString("; ") { it.texto + if (it.porFirmar) " (propuesta, por firmar)" else "" }
+            else -> "Nuestra libreta, ${h.hechos} de ${Libreta.META}, ${h.pendientes.size} pendientes"
         }
 
         // ---- El dibujo ----
 
-        fun dibujar(context: Context, h: Hoja, anchoDp: Float, altoDp: Float): Bitmap {
+        private fun lienzo(context: Context, anchoDp: Float, altoDp: Float): Pair<Bitmap, Float> {
             val d = context.resources.displayMetrics.density
-            val w = (anchoDp * d).roundToInt().coerceAtLeast(1)
-            val alto = (altoDp * d).roundToInt().coerceAtLeast(1)
-            val bmp = Bitmap.createBitmap(w, alto, Bitmap.Config.ARGB_8888)
+            val bmp = Bitmap.createBitmap((anchoDp * d).roundToInt().coerceAtLeast(1), (altoDp * d).roundToInt().coerceAtLeast(1),
+                Bitmap.Config.ARGB_8888)
+            bmp.density = context.resources.displayMetrics.densityDpi
+            return bmp to d
+        }
+
+        private fun radio(context: Context, d: Float) =
+            if (Build.VERSION.SDK_INT >= 31) context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) else 16 * d
+
+        /**
+         * El papel: color crema con grano y fibras, un poco más oscuro hacia las orillas (como una hoja
+         * con algo de uso), y los cantos de las hojas de abajo asomando en el borde inferior.
+         */
+        private fun papel(context: Context, anchoDp: Float, altoDp: Float): Bitmap {
+            val (bmp, d) = lienzo(context, anchoDp, altoDp)
+            val w = bmp.width.toFloat(); val h = bmp.height.toFloat()
             val c = Canvas(bmp)
-            val radio = if (Build.VERSION.SDK_INT >= 31)
-                context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) else 16 * d
+            val r = radio(context, d)
+            c.clipPath(Path().apply { addRoundRect(RectF(0f, 0f, w, h), r, r, Path.Direction.CW) })
+            val p = Paint(Paint.ANTI_ALIAS_FLAG)
 
-            val pincel = Paint(Paint.ANTI_ALIAS_FLAG)
-            val hoja = Path().apply { addRoundRect(RectF(0f, 0f, w.toFloat(), alto.toFloat()), radio, radio, Path.Direction.CW) }
-            c.clipPath(hoja)
-            pincel.color = context.getColor(R.color.hoja)
-            c.drawRect(0f, 0f, w.toFloat(), alto.toFloat(), pincel)
+            // Las hojas de abajo: dos cantos un poco más oscuros.
+            p.color = context.getColor(R.color.hoja_canto)
+            c.drawRect(0f, 0f, w, h, p)
+            p.color = context.getColor(R.color.hoja)
+            c.drawRoundRect(RectF(0f, 0f, w, h - 3 * d), r, r, p)
 
-            val completo = anchoDp >= COMPLETO.width && altoDp >= COMPLETO.height
-            val franja = !completo && anchoDp >= FRANJA.width && altoDp >= FRANJA.height
-            val margen = (if (completo) 30 else 22) * d
-
-            // Renglones: en el completo, un título arriba y hasta tres planes; en la franja, uno solo
-            // centrado; en el mini, si el plan no cabe y hay alto, pasa a un segundo renglón.
-            val letra = Papel.letra(context)
-            val texto = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = letra }
-            val derecha = w - 14 * d
-            val unRenglon = (alto * 0.52f).coerceIn(22 * d, 40 * d)
-            val mensaje = when {
-                !h.vinculada -> "Abre nuestra libreta"
-                h.pendientes.isEmpty() && h.hechos == 0 -> "Escriban su primer plan"
-                h.pendientes.isEmpty() -> "Todo tachado"
-                else -> null
+            // Grano: puntitos y fibras cortas, siempre en el mismo sitio.
+            val azar = Random(7)
+            p.color = context.getColor(R.color.hoja_grano)
+            repeat((w * h / (d * d * 55)).toInt()) {
+                p.alpha = 10 + azar.nextInt(18)
+                c.drawCircle(azar.nextFloat() * w, azar.nextFloat() * h, (0.4f + azar.nextFloat() * 0.6f) * d, p)
             }
-            val dosRenglones = !completo && !franja && altoDp >= 64 && run {
-                texto.textSize = (unRenglon * 0.74f).coerceAtMost(26 * d)
-                texto.measureText(h.pendientes.firstOrNull()?.texto ?: mensaje ?: "") > derecha - margen - 10 * d
-            }
-            val filas = if (completo) 3 else 1
-            val cabecera = if (completo) 40 * d else 0f
-            val renglon = when {
-                completo -> ((alto - cabecera - 10 * d) / filas).coerceIn(24 * d, 40 * d)
-                dosRenglones -> (alto * 0.36f).coerceIn(22 * d, 34 * d)
-                else -> unRenglon
-            }
-            val primeraLinea = when {
-                completo -> cabecera + renglon
-                dosRenglones -> alto / 2f + 4 * d
-                else -> (alto + renglon) / 2f - 4 * d
+            p.strokeWidth = 0.6f * d; p.strokeCap = Paint.Cap.ROUND
+            repeat((w * h / (d * d * 900)).toInt()) {
+                p.alpha = 14 + azar.nextInt(14)
+                val x = azar.nextFloat() * w; val y = azar.nextFloat() * h
+                val largo = (3 + azar.nextFloat() * 5) * d; val a = azar.nextFloat() * Math.PI.toFloat()
+                c.drawLine(x, y, x + largo * kotlin.math.cos(a), y + largo * kotlin.math.sin(a), p)
             }
 
-            val linea = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.renglon); strokeWidth = 1 * d }
-            var y = primeraLinea
-            while (y - renglon > 4 * d) y -= renglon
-            while (y < alto - 2 * d) { c.drawLine(0f, y, w.toFloat(), y, linea); y += renglon }
-            linea.color = context.getColor(R.color.margen)
-            c.drawLine(margen, 0f, margen, alto.toFloat(), linea)
+            // Viñeta: las orillas, apenas más tostadas.
+            p.alpha = 255
+            p.shader = RadialGradient(w / 2, h / 2, maxOf(w, h) * 0.75f,
+                intArrayOf(Color.TRANSPARENT, Color.TRANSPARENT, context.getColor(R.color.hoja_orilla)),
+                floatArrayOf(0f, 0.62f, 1f), Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, w, h, p)
+            // Luz de arriba: el borde superior un poco más claro.
+            p.shader = LinearGradient(0f, 0f, 0f, 21 * d, Color.argb(40, 255, 255, 255), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, w, 21 * d, p)
 
-            // La cuenta, a la derecha: en el completo junto al título, en la franja en el renglón.
-            val cuenta = "${h.hechos}/${Libreta.META}"
-            var finTexto = derecha
-            if (h.vinculada && (completo || franja)) {
-                texto.textSize = (if (completo) 18 else 17) * d
-                texto.color = context.getColor(R.color.tinta_suave)
-                val ancho = texto.measureText(cuenta)
-                val base = if (completo) cabecera - 12 * d else primeraLinea - 5 * d
-                c.drawText(cuenta, derecha - ancho, base, texto)
-                if (franja) finTexto = derecha - ancho - 12 * d
-            }
-            if (completo) {
-                texto.typeface = Papel.letraNegrita(context)
-                texto.textSize = 22 * d
-                texto.color = context.getColor(R.color.tinta_lapiz)
-                c.drawText(cortar("Nuestras aventuras", texto, derecha - margen - 70 * d), margen + 10 * d, cabecera - 12 * d, texto)
-                texto.typeface = letra
-            }
+            // Los agujeros del anillado, perforados: ahí se ve el fondo de pantalla.
+            p.shader = null; p.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            agujeros(h, d).forEach { (x, y) -> c.drawCircle(x, y, AGUJERO * d, p) }
+            return bmp
+        }
 
-            // Lo que va en los renglones.
-            val tam = (renglon * 0.74f).coerceAtMost(26 * d)
-            val ver = h.pendientes.take(filas)
-            if (mensaje != null) {
-                texto.textSize = tam; texto.color = context.getColor(R.color.tinta_guia)
-                renglones(c, mensaje, texto, margen + 10 * d, primeraLinea - 5 * d, finTexto - margen - 10 * d, if (dosRenglones) renglon else 0f)
-                // «Todo tachado» lleva su palomita de trazo (el ícono de la libreta, no un emoji).
-                if (h.vinculada && h.pendientes.isEmpty() && h.hechos > 0 && !dosRenglones) {
-                    val x = margen + 10 * d + texto.measureText(mensaje) + 6 * d
-                    val lado = (tam * 0.9f).toInt()
-                    context.getDrawable(R.drawable.ic_libreta_hecho)?.mutate()?.apply {
-                        setTint(context.getColor(R.color.tinta_guia))
-                        setBounds(x.toInt(), (primeraLinea - 5 * d - lado * 0.85f).toInt(), x.toInt() + lado, (primeraLinea - 5 * d + lado * 0.15f).toInt())
-                        draw(c)
-                    }
-                }
-            }
-            ver.forEachIndexed { i, p ->
-                val base = primeraLinea + i * renglon - 5 * d
-                val clip = if (p.porFirmar) 16 * d else 0f
-                texto.textSize = tam
-                texto.color = context.getColor(p.tinta.color)
-                val disponible = finTexto - margen - 10 * d - clip
-                renglones(c, p.texto, texto, margen + 10 * d, base, disponible, if (dosRenglones) renglon else 0f)
-                if (p.porFirmar) clip(c, context, derecha - 6 * d, base - tam * 0.45f, d)
+        /**
+         * Encima de todo: la raya roja del margen y los agujeros del anillado, perforados de verdad
+         * (se ve el fondo de pantalla) con su sombrita en el canto de arriba.
+         */
+        private fun anillado(context: Context, anchoDp: Float, altoDp: Float): Bitmap {
+            val (bmp, d) = lienzo(context, anchoDp, altoDp)
+            val h = bmp.height.toFloat()
+            val c = Canvas(bmp)
+            val p = Paint(Paint.ANTI_ALIAS_FLAG)
+            p.color = context.getColor(R.color.margen); p.strokeWidth = 1.5f * d
+            c.drawLine(MARGEN * d, 0f, MARGEN * d, h, p)
+
+            // El canto de cada agujero: sombra en la mitad de arriba (la luz viene de arriba) y brillo abajo.
+            p.style = Paint.Style.STROKE
+            agujeros(h, d).forEach { (x, y) ->
+                val aro = RectF(x - AGUJERO * d, y - AGUJERO * d, x + AGUJERO * d, y + AGUJERO * d)
+                p.strokeWidth = 1.5f * d; p.color = context.getColor(R.color.hoja_orilla); p.alpha = 200
+                c.drawArc(aro, 180f, 180f, false, p)
+                p.strokeWidth = 1f * d; p.color = Color.WHITE; p.alpha = 110
+                c.drawArc(aro, 20f, 140f, false, p)
             }
             return bmp
         }
 
-        /** Escribe [s] en un renglón, o en dos si [siguiente] (la distancia al segundo) no es cero. */
-        private fun renglones(c: Canvas, s: String, p: TextPaint, x: Float, base: Float, ancho: Float, siguiente: Float) {
-            if (siguiente == 0f) { c.drawText(cortar(s, p, ancho), x, base, p); return }
-            val (uno, dos) = partir(s, p, ancho)
-            c.drawText(uno, x, base, p)
-            c.drawText(cortar(dos, p, ancho), x, base + siguiente, p)
+        /** Dónde van los agujeros: cada 55 dp, centrados en el alto. */
+        private fun agujeros(h: Float, d: Float): List<Pair<Float, Float>> {
+            val paso = CABECERA * d
+            val n = ((h - 13 * d) / paso).toInt().coerceAtLeast(1)
+            val inicio = (h - (n - 1) * paso) / 2f
+            val cx = (ANILLADO / 2f + 2f) * d
+            return (0 until n).map { cx to inicio + it * paso }
         }
 
-        /** Lo que cabe en el primer renglón (cortando en un espacio) y el resto. */
-        private fun partir(s: String, p: TextPaint, ancho: Float): Pair<String, String> {
-            val limpio = s.replace('\n', ' ').trim()
-            val caben = p.breakText(limpio, true, ancho, null)
-            if (caben >= limpio.length) return limpio to ""
-            val corte = limpio.lastIndexOf(' ', caben).takeIf { it > 0 } ?: caben
-            return limpio.substring(0, corte).trimEnd() to limpio.substring(corte).trimStart()
+        /** La cabecera: «Nuestras aventuras» y la cuenta, sobre su renglón. Deja libre el sitio del «+». */
+        private fun titulo(context: Context, h: Hoja, anchoDp: Float): Bitmap {
+            val (bmp, d) = lienzo(context, anchoDp, CABECERA)
+            val c = Canvas(bmp)
+            val w = bmp.width.toFloat(); val alto = bmp.height.toFloat()
+            renglon(context, c, 0f, w, alto, d)
+            val t = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Papel.letraNegrita(context) }
+            val base = alto - SANGRIA * d
+            val libre = w - (BOTON + ORILLA + SANGRIA) * d
+            // La cuenta, a la izquierda del «+».
+            var finTitulo = libre
+            if (h.vinculada) {
+                t.typeface = Papel.letra(context); t.textSize = 16 * d; t.color = context.getColor(R.color.tinta_suave)
+                val cuenta = "${h.hechos}/${Libreta.META}"
+                val ancho = t.measureText(cuenta)
+                c.drawText(cuenta, libre - ancho, base, t)
+                finTitulo = libre - ancho - ORILLA * d
+            }
+            t.typeface = Papel.letraNegrita(context); t.textSize = TITULO * d; t.color = context.getColor(R.color.tinta_lapiz)
+            val x = (MARGEN + SANGRIA) * d
+            c.drawText(TextUtils.ellipsize("Nuestras aventuras", t, finTitulo - x, TextUtils.TruncateAt.END).toString(), x, base, t)
+            return bmp
         }
 
-        /** Una sola línea con «…» si no cabe. */
-        private fun cortar(s: String, p: TextPaint, ancho: Float): String =
-            TextUtils.ellipsize(s.replace('\n', ' '), p, ancho.coerceAtLeast(0f), TextUtils.TruncateAt.END).toString()
+        /** Lo que se ve cuando no hay nada pendiente (o la libreta no está vinculada). */
+        private fun vacio(context: Context, h: Hoja, anchoDp: Float): Bitmap {
+            val (bmp, d) = lienzo(context, anchoDp, RENGLON)
+            val c = Canvas(bmp)
+            renglon(context, c, 0f, bmp.width.toFloat(), bmp.height.toFloat(), d)
+            val mensaje = when {
+                !h.vinculada -> "Abre nuestra libreta"
+                h.hechos == 0 -> "+ Escriban su primer plan"
+                else -> "Todo tachado"
+            }
+            val t = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                typeface = Papel.letra(context); textSize = LETRA * d; color = context.getColor(R.color.tinta_guia)
+            }
+            val x = (MARGEN + SANGRIA) * d
+            val base = bmp.height - SANGRIA * d
+            c.drawText(mensaje, x, base, t)
+            // «Todo tachado» lleva su palomita de trazo (el ícono de la libreta, no un emoji).
+            if (h.vinculada && h.pendientes.isEmpty() && h.hechos > 0) {
+                val ix = x + t.measureText(mensaje) + 6 * d
+                val lado = (LETRA * 0.9f * d).toInt()
+                context.getDrawable(R.drawable.ic_libreta_hecho)?.mutate()?.apply {
+                    setTint(context.getColor(R.color.tinta_guia))
+                    setBounds(ix.toInt(), (base - lado * 0.85f).toInt(), ix.toInt() + lado, (base + lado * 0.15f).toInt())
+                    draw(c)
+                }
+            }
+            return bmp
+        }
 
-        /** El clip de una propuesta sin firmar, pequeñito al final del renglón. */
-        private fun clip(c: Canvas, context: Context, cx: Float, cy: Float, d: Float) {
-            val alambre = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE; strokeWidth = 1.5f * d; strokeCap = Paint.Cap.ROUND
-                color = context.getColor(R.color.clip)
-            }
-            val e = 0.62f // escala del clip de [BotonClip]
-            val forma = Path().apply {
-                moveTo(10 * d, 24 * d); lineTo(10 * d, 6 * d)
-                arcTo(RectF(2 * d, 2 * d, 10 * d, 10 * d), 0f, -180f, false)
-                lineTo(2 * d, 28 * d)
-                arcTo(RectF(2 * d, 25 * d, 8 * d, 31 * d), 180f, -180f, false)
-                lineTo(8 * d, 10 * d)
-            }
-            c.save()
-            c.translate(cx - 6 * d * e, cy - 16 * d * e)
-            c.rotate(-12f, 6 * d * e, 16 * d * e)
-            c.scale(e, e)
-            c.drawPath(forma, alambre.apply { strokeWidth = 1.5f * d / e })
-            c.restore()
+        /** La raya azul de un renglón, a lo ancho desde después del anillado. */
+        fun renglon(context: Context, c: Canvas, x0: Float, w: Float, y: Float, d: Float) {
+            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = context.getColor(R.color.renglon); strokeWidth = 1 * d }
+            c.drawLine(maxOf(x0, (ANILLADO + 5) * d), y - 0.5f * d, w, y - 0.5f * d, p)
         }
     }
 }

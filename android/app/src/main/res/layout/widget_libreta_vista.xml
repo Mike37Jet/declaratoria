@@ -1,38 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Solo para la vista previa del selector de widgets. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/fondo_libreta_widget"
-    android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingTop="10dp"
-    android:paddingEnd="14dp">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="casual"
-        android:text="Nuestras aventuras"
-        android:textColor="@color/tinta_lapiz"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:fontFamily="casual"
-        android:text="Ir al cine el viernes"
-        android:textColor="@color/tinta_azul"
-        android:textSize="16sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:fontFamily="casual"
-        android:text="Picnic en el parque"
-        android:textColor="@color/tinta_rosa"
-        android:textSize="16sp" />
-</LinearLayout>
+<!-- Solo para la vista previa del selector de widgets: imita la hoja real (anillado, margen, renglones de 34 dp). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/fondo_libreta_widget">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="55dp" android:background="@drawable/renglon_libreta_vista">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:layout_marginStart="42dp" android:layout_marginBottom="6dp" android:fontFamily="casual"
+                android:text="Nuestras aventuras" android:textColor="@color/tinta_lapiz" android:textSize="21sp" android:textStyle="bold" />
+            <ImageView android:layout_width="34dp" android:layout_height="34dp" android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="13dp" android:background="@drawable/boton_libreta_widget" android:padding="8dp"
+                android:src="@drawable/ic_libreta_mas" android:tint="@color/tinta_lapiz" />
+        </FrameLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/renglon_libreta_vista">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:layout_marginStart="42dp" android:layout_marginBottom="6dp" android:fontFamily="casual"
+                android:text="Ir al cine el viernes" android:textColor="@color/tinta_azul" android:textSize="16sp" />
+            <ImageView android:layout_width="34dp" android:layout_height="34dp" android:layout_gravity="end" android:layout_marginEnd="13dp"
+                android:padding="8dp" android:src="@drawable/ic_libreta_casilla" android:tint="@color/tinta_azul" />
+        </FrameLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/renglon_libreta_vista">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:layout_marginStart="42dp" android:layout_marginBottom="6dp" android:fontFamily="casual"
+                android:text="Picnic en el parque" android:textColor="@color/tinta_rosa" android:textSize="16sp" />
+            <ImageView android:layout_width="34dp" android:layout_height="34dp" android:layout_gravity="end" android:layout_marginEnd="13dp"
+                android:padding="8dp" android:src="@drawable/ic_libreta_casilla" android:tint="@color/tinta_rosa" />
+        </FrameLayout>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/renglon_libreta_vista">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:layout_marginStart="42dp" android:layout_marginBottom="6dp" android:fontFamily="casual"
+                android:text="Aprender a hacer sushi" android:textColor="@color/tinta_rosa" android:textSize="16sp" />
+            <ImageView android:layout_width="34dp" android:layout_height="34dp" android:layout_gravity="end" android:layout_marginEnd="13dp"
+                android:padding="8dp" android:src="@drawable/ic_libreta_firma" android:tint="@color/clip" />
+        </FrameLayout>
+    </LinearLayout>
+    <ImageView android:layout_width="1.5dp" android:layout_height="match_parent" android:layout_marginStart="34dp"
+        android:background="@color/margen" />
+    <LinearLayout android:layout_width="21dp" android:layout_height="match_parent" android:layout_marginStart="2dp"
+        android:gravity="center" android:orientation="vertical">
+        <ImageView android:layout_width="10dp" android:layout_height="10dp" android:src="@drawable/agujero_libreta" />
+        <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_marginTop="45dp" android:src="@drawable/agujero_libreta" />
+        <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_marginTop="45dp" android:src="@drawable/agujero_libreta" />
+    </LinearLayout>
+</FrameLayout>

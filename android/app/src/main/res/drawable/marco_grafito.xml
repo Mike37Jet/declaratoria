@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Anillo y Puntos: gris grafito como los widgets de Apple. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"><solid android:color="@color/grafito_fondo" /><corners android:radius="@dimen/radio_widget" /></shape>
