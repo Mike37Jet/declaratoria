@@ -155,16 +155,16 @@ class MainActivity : Activity() {
         if (nueva == null) return
         val lado = (boton.textSize * 1.3f).toInt()
         val icono = getDrawable(R.drawable.ic_descargar)!!.mutate().apply { setTint(boton.currentTextColor); setBounds(0, 0, lado, lado) }
-        // Corto: «Nueva función · Actualizar» y un puntito dorado. El número de versión va solo para TalkBack.
+        // Corto: «Hay una actualización» y un puntito dorado. El número de versión va solo para TalkBack.
         val t = android.text.SpannableStringBuilder()
             .append("·", android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_CENTER), 0)
             .append("  ")
-        t.append("Nueva función", android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0)
-        t.append(" · Actualizar  ")
+        t.append("Hay una actualización", android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0)
+        t.append("  ")
         t.append("●", android.text.style.ForegroundColorSpan(getColor(R.color.gold)), 0)
         t.setSpan(android.text.style.RelativeSizeSpan(0.6f), t.length - 1, t.length, 0)
         boton.text = t
-        boton.contentDescription = "Nueva función: hay una versión $nueva de la app. Toca para actualizar"
+        boton.contentDescription = "Hay una actualización: la versión $nueva de la app. Toca para descargarla"
     }
 
     override fun onPause() {

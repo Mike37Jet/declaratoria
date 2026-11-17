@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <!-- Hay una versión nueva («Nueva función»): panel oscuro con borde dorado, lo primero que se ve. Baja el APK del link fijo de GitHub.
+        <!-- Hay una versión nueva («Hay una actualización»): panel oscuro con borde dorado, lo primero que se ve. Baja el APK del link fijo de GitHub.
              Solo aparece cuando la publicada es más nueva que la instalada (Actualizacion.kt). -->
         <Button
             android:id="@+id/actualizar"
