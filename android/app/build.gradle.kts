@@ -14,8 +14,8 @@ android {
         applicationId = "com.roguelito.rommicines"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.2"
     }
 
     // Las fotos de la página (public/photos) viajan dentro de la app: son las
