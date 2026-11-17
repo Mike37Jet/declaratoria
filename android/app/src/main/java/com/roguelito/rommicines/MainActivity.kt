@@ -85,6 +85,11 @@ class MainActivity : Activity() {
         }
         boleto = findViewById(R.id.boleto)
         findViewById<View>(R.id.poner_widget).setOnClickListener { elegirWidget() }
+        findViewById<TextView>(R.id.actualizar).apply {
+            val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
+            if (version != null) text = getString(R.string.actualizar) + " · tienes la $version"
+            setOnClickListener { actualizarApp() }
+        }
         findViewById<View>(R.id.ayuda).setOnClickListener { mostrarAyuda() }
         findViewById<View>(R.id.mandar_toque).apply {
             setOnClickListener { mandarToque() }
@@ -548,6 +553,16 @@ class MainActivity : Activity() {
         }
         if (texto.isNotBlank() && !deshacer && !error && !Fotos.importando) {
             principal.postDelayed({ if (!isDestroyed) mostrarEstadoFotos() }, 5100)
+        }
+    }
+
+    /** Abre el link fijo de la última versión: el navegador baja el APK y se instala encima, sin borrar nada. */
+    private fun actualizarApp() {
+        val abrir = Intent(Intent.ACTION_VIEW, Uri.parse(Juntos.ACTUALIZACION))
+        if (runCatching { startActivity(abrir) }.isFailure) {
+            AlertDialog.Builder(this).setTitle("Actualizar la app")
+                .setMessage("No encontré un navegador. Abre este link para bajar la última versión:\n\n${Juntos.ACTUALIZACION}")
+                .setPositiveButton("Entendido", null).show()
         }
     }
 

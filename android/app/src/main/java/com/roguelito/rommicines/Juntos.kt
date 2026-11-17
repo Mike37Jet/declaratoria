@@ -70,6 +70,9 @@ object Juntos {
     }
 
     /** Lo que se dispara al tocar un acceso directo a la página. */
+    /** Siempre baja el APK de la última versión publicada en GitHub (Releases → latest). */
+    const val ACTUALIZACION = "https://github.com/Mike37Jet/declaratoria/releases/latest/download/ROMMICINES.apk"
+
     fun abrirPagina(context: Context): PendingIntent = PendingIntent.getActivity(
         context, 2,
         Intent(Intent.ACTION_VIEW, Uri.parse(PAGINA)),

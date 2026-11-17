@@ -254,5 +254,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="@string/anadir_widget" />
+
+        <!-- Baja el APK de la última versión publicada (el link fijo de GitHub). -->
+        <Button
+            android:id="@+id/actualizar"
+            style="@style/AccionTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/actualizar" />
     </LinearLayout>
 </ScrollView>
