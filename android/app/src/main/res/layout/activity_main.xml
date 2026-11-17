@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <!-- Hay una versión nueva: franja dorada, lo primero que se ve. Baja el APK del link fijo de GitHub.
+        <!-- Hay una versión nueva («Nueva función»): panel oscuro con borde dorado, lo primero que se ve. Baja el APK del link fijo de GitHub.
              Solo aparece cuando la publicada es más nueva que la instalada (Actualizacion.kt). -->
         <Button
             android:id="@+id/actualizar"
@@ -39,9 +39,8 @@
             android:background="@drawable/franja_actualizar"
             android:minHeight="55dp"
             android:text="@string/actualizar"
-            android:textColor="@color/cinema"
+            android:textColor="@color/gold_light"
             android:textSize="16sp"
-            android:textStyle="bold"
             android:visibility="gone" />
 
         <com.roguelito.rommicines.Boleto

@@ -155,11 +155,17 @@ class MainActivity : Activity() {
         if (nueva == null) return
         val lado = (boton.textSize * 1.3f).toInt()
         val icono = getDrawable(R.drawable.ic_descargar)!!.mutate().apply { setTint(boton.currentTextColor); setBounds(0, 0, lado, lado) }
-        val leyenda = "Hay una versión nueva: $nueva · Actualizar"
-        boton.text = android.text.SpannableStringBuilder()
+        val leyenda = "Nueva función: versión $nueva · Actualizar"
+        // «Nueva función» en negrita y, al final, un puntito dorado que marca que es algo nuevo.
+        val t = android.text.SpannableStringBuilder()
             .append("·", android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_CENTER), 0)
-            .append("  ").append(leyenda)
-        boton.contentDescription = leyenda
+            .append("  ")
+        t.append("Nueva función", android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0)
+        t.append(leyenda.removePrefix("Nueva función")).append("  ")
+        t.append("●", android.text.style.ForegroundColorSpan(getColor(R.color.gold)), 0)
+        t.setSpan(android.text.style.RelativeSizeSpan(0.6f), t.length - 1, t.length, 0)
+        boton.text = t
+        boton.contentDescription = "Nueva función: hay una versión $nueva de la app. Toca para actualizar"
     }
 
     override fun onPause() {
