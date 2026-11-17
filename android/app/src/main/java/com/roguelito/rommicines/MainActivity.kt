@@ -87,7 +87,13 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.poner_widget).setOnClickListener { elegirWidget() }
         findViewById<TextView>(R.id.actualizar).apply {
             val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
-            if (version != null) text = getString(R.string.actualizar) + " · tienes la $version"
+            val lado = (textSize * 1.3f).toInt()
+            val icono = getDrawable(R.drawable.ic_descargar)!!.mutate().apply { setTint(currentTextColor); setBounds(0, 0, lado, lado) }
+            val leyenda = getString(R.string.actualizar) + if (version != null) " · tienes la $version" else ""
+            text = android.text.SpannableStringBuilder()
+                .append("·", android.text.style.ImageSpan(icono, android.text.style.DynamicDrawableSpan.ALIGN_CENTER), 0)
+                .append("  ").append(leyenda)
+            contentDescription = leyenda
             setOnClickListener { actualizarApp() }
         }
         findViewById<View>(R.id.ayuda).setOnClickListener { mostrarAyuda() }
