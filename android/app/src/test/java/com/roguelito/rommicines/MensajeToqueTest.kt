@@ -38,4 +38,17 @@ class MensajeToqueTest {
             mapOf("de" to "", "nombre" to "Mimina"), mapOf("de" to "otro", "nombre" to " "))
             .forEach { assertNull(MensajeToque.paraEsteCelular(it, "yo")) }
     }
+
+    @Test fun `las frases nuevas se ven bien al recibirlas`() {
+        assertTrue(TipoToque.CAMINO.recibido("Roguelito").endsWith("Roguelito va en camino"))
+        assertTrue(TipoToque.VERTE.recibido("Mimina").endsWith("Mimina ya quiere verte"))
+        assertTrue(TipoToque.ORGULLO.recibido("Mimina").endsWith("Mimina te dice: qué orgullo me das"))
+        assertTrue(TipoToque.LIBRE.recibido("Roguelito").endsWith("Roguelito ya está libre"))
+    }
+
+    @Test fun `cada frase elegible tiene su propio codigo`() {
+        val codigos = TipoToque.elegibles.map { it.codigo }
+        assertEquals(codigos.size, codigos.toSet().size)
+        assertEquals(13, TipoToque.elegibles.size)
+    }
 }

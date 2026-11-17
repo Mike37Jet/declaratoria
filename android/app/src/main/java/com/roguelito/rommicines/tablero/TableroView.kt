@@ -100,7 +100,9 @@ class TableroView(context: Context) : View(context) {
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        lado = DibujoTablero.lado(w / d, h / d, fraccion = 0.3f, maximo = 144f) * d
+        lado = w * DibujoTablero.LADO_EN_TABLERO
+        // El widget copia el acomodo a escala: necesita saber la forma de este tablero.
+        if (w > 0 && h > 0) Tablero.recordarAspecto(context, h.toFloat() / w)
         fondo = Bitmap.createBitmap(w.coerceAtLeast(1), h.coerceAtLeast(1), Bitmap.Config.ARGB_8888).also {
             DibujoTablero.corcho(Canvas(it), w.toFloat(), h.toFloat(), d, 21 * d)
         }

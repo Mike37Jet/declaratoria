@@ -91,8 +91,12 @@ se comparte en `parejas/{p}/tablero/{id}` (quitar marca `quitada`) y la copia lo
 Mientras nadie acomoda nada se arma solo con las 7 fotos más recientes (`automatico`); el primer cambio guarda ese
 acomodo (`Tablero.fijar`). El **widget de fotos es el tablero**: la clase sigue siendo `CarruselWidget` (y
 `carrusel_info.xml`) para no perder los widgets puestos, pero dibuja una sola imagen con `DibujoTablero.widget`
-(fuera del hilo principal) y muestra las piezas de más arriba que caben (`cabenEnWidget`: 2 en 2×2, 3 en 3×2, 4 en
-4×2, hasta 7), estiradas para llenar su forma (`estirar`). `CarruselWidget.refrescar` lo vuelve a dibujar.
+(fuera del hilo principal). Con el tablero acomodado, el widget es una **copia a escala** (`encuadrar`) del trozo
+del tablero donde están las piezas más recientes: mismas distancias, tamaño relativo (`LADO_EN_TABLERO` = 0,34 del
+ancho) y giro, sobre un tablero de referencia con la forma (alto/ancho) que tiene en la app (`Tablero.aspecto`,
+prefs «tablero_vista», lo guarda `TableroView`). Si las fotos quedarían de menos de 64 dp se deja fuera la más vieja.
+Nada de estirar por separado cada eje: así se desordenaba. En modo automático reparte según `cabenEnWidget`.
+`CarruselWidget.refrescar` lo vuelve a dibujar.
 En los layouts de widget no se puede usar `<View>` suelto (la vista previa sale «Couldn't add widget»): `FrameLayout`.
 
 ## Cosas que no se ven en el código

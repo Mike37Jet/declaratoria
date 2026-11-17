@@ -89,6 +89,20 @@ object Tablero {
             giro = giroDe(azar), chincheta = azar.nextInt(5), orden = System.currentTimeMillis(), autor = Libreta.yo() ?: "")
     }
 
+    /**
+     * La forma (alto/ancho) del tablero en la pantalla de la app, para que el widget copie el acomodo a escala.
+     * Mientras no se haya abierto, la de un celular común.
+     */
+    fun aspecto(context: Context): Float =
+        context.getSharedPreferences("tablero_vista", Context.MODE_PRIVATE).getFloat("aspecto", 1.65f)
+
+    fun recordarAspecto(context: Context, aspecto: Float) {
+        val p = context.getSharedPreferences("tablero_vista", Context.MODE_PRIVATE)
+        if (kotlin.math.abs(p.getFloat("aspecto", 0f) - aspecto) < 0.01f) return
+        p.edit().putFloat("aspecto", aspecto).apply()
+        CarruselWidget.refrescar(context)
+    }
+
     // ---- Cambios ----
 
     /** Guarda el acomodo entero (la primera vez que se toca el tablero automático). */

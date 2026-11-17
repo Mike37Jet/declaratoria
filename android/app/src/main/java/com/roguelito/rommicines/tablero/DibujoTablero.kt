@@ -54,7 +54,18 @@ object DibujoTablero {
     /** Rojo, azul, verde, amarillo y rosa. */
     val CHINCHETAS = intArrayOf(Color.rgb(0xD6, 0x45, 0x45), Color.rgb(0x3B, 0x6F, 0xD6), Color.rgb(0x3F, 0x9B, 0x5C), Color.rgb(0xE8, 0xB0, 0x2E), Color.rgb(0xD4, 0x5C, 0x9A))
 
-    /** El lado de una foto (en dp): la mitad del lado corto del tablero, entre un mínimo y un máximo. */
+    /**
+     * En la pantalla del tablero, el lado de una foto es esta fracción del ancho del tablero. Es fijo para que
+     * el widget pueda copiar el acomodo a escala: mismas distancias y mismos tamaños, solo que más chico.
+     */
+    const val LADO_EN_TABLERO = 0.34f
+    /** El ancho (en dp) del tablero «de referencia» con el que el widget mide el acomodo. */
+    private const val ANCHO_REFERENCIA = 360f
+    /** En el widget, una foto no se dibuja más chica que esto (si no caben, se muestran menos) ni más grande que esto. */
+    private const val LADO_MINIMO_WIDGET = 64f
+    private const val LADO_MAXIMO_WIDGET = 110f
+
+    /** El lado de una foto (en dp) en el widget automático: la mitad del lado corto, entre un mínimo y un máximo. */
     fun lado(anchoDp: Float, altoDp: Float, fraccion: Float = 0.5f, minimo: Float = 89f, maximo: Float = 110f) =
         (min(anchoDp, altoDp) * fraccion).coerceIn(minimo, maximo)
 
@@ -90,20 +101,6 @@ object DibujoTablero {
             val y = (fila + 0.5f) / filas + (azar.nextFloat() - 0.5f) * 0.12f / filas
             p.copy(x = x, y = y)
         }.sortedBy { it.orden }
-    }
-
-    /**
-     * Para el widget: las pocas piezas que caben pueden haber quedado juntas en la pantalla (que es más alta).
-     * Se estira su acomodo para que llenen el widget, sin cambiar quién está a la izquierda, arriba, etc.
-     */
-    fun estirar(piezas: List<Pieza>): List<Pieza> {
-        if (piezas.size < 2) return piezas
-        fun eje(valores: List<Float>): (Float) -> Float {
-            val min = valores.min(); val max = valores.max()
-            return if (max - min < 0.05f) { _ -> 0.5f } else { v -> 0.1f + (v - min) / (max - min) * 0.8f }
-        }
-        val x = eje(piezas.map { it.x }); val y = eje(piezas.map { it.y })
-        return piezas.map { it.copy(x = x(it.x), y = y(it.y)) }
     }
 
     // ---- El corcho ----
@@ -275,7 +272,13 @@ object DibujoTablero {
     /** Cuántas piezas caben en un widget de ese tamaño: 2 en un 2×2, 3 en un 3×2, 4 en un 4×2 y hasta 7. */
     fun cabenEnWidget(anchoDp: Float, altoDp: Float) = (anchoDp * altoDp / 15000f).toInt().coerceIn(1, Tablero.AUTOMATICAS)
 
-    /** El widget entero como una imagen: el corcho y las piezas de más arriba que quepan. */
+    /**
+     * El widget entero como una imagen: el corcho y las piezas más recientes.
+     *
+     * Si el tablero ya se acomodó en la app, el widget es una copia **a escala** del trozo del tablero donde están
+     * esas piezas (mismas distancias, mismos tamaños relativos, mismo giro). Si así quedan muy chicas, se muestran
+     * menos piezas (se quita la más vieja) en vez de amontonarlas. Si nadie acomodó nada, se reparten solas.
+     */
     fun widget(context: Context, anchoDp: Float, altoDp: Float): Bitmap {
         val d = context.resources.displayMetrics.density
         val bmp = Bitmap.createBitmap((anchoDp * d).roundToInt().coerceAtLeast(1), (altoDp * d).roundToInt().coerceAtLeast(1), Bitmap.Config.ARGB_8888)
@@ -285,19 +288,64 @@ object DibujoTablero {
         corcho(c, w, h, d, radio(context, d))
 
         val estado = Tablero.estado(context)
-        var visibles = estado.piezas.sortedByDescending { it.orden }.take(cabenEnWidget(anchoDp, altoDp)).sortedBy { it.orden }
-        visibles = if (estado.automatico) repartir(visibles, anchoDp / altoDp) else estirar(visibles)
-        if (visibles.isEmpty()) {
+        val recientes = estado.piezas.sortedByDescending { it.orden }.take(cabenEnWidget(anchoDp, altoDp))
+        if (recientes.isEmpty()) {
             pista(context, c, w, h, d, if (estado.automatico) "Toca para clavar sus fotos" else "Toca para clavar algo")
             return bmp
         }
-        val lado = lado(anchoDp, altoDp) * d
-        visibles.forEach { p ->
+        fun dibujar(p: Pieza, cx: Float, cy: Float, lado: Float) {
             val foto = Tablero.archivo(context, p)?.let { com.roguelito.rommicines.Fotos.reducida(it, lado.toInt(), Bitmap.Config.RGB_565) }
-            val ctr = centro(p, w, h, lado, d)
-            pieza(context, c, p, ctr.x, ctr.y, p.giro, lado, d, foto)
+            pieza(context, c, p, cx, cy, p.giro, lado, d, foto)
+        }
+
+        if (estado.automatico) {
+            val lado = lado(anchoDp, altoDp) * d
+            repartir(recientes, anchoDp / altoDp).forEach { p ->
+                val ctr = centro(p, w, h, lado, d)
+                dibujar(p, ctr.x, ctr.y, lado)
+            }
+            return bmp
+        }
+
+        // El tablero de referencia, en dp, con la forma que tiene en la pantalla de la app.
+        val rw = ANCHO_REFERENCIA
+        val rh = rw * Tablero.aspecto(context)
+        val rlado = rw * LADO_EN_TABLERO
+        val margen = MARCO + 13f
+        var elegidas = recientes
+        var vista: Vista
+        while (true) {
+            vista = encuadrar(elegidas, rw, rh, rlado, anchoDp - 2 * margen, altoDp - 2 * margen)
+            if (rlado * vista.escala >= LADO_MINIMO_WIDGET || elegidas.size == 1) break
+            elegidas = elegidas.dropLast(1) // se queda fuera la más vieja
+        }
+        val escala = vista.escala
+        // El trozo del tablero queda centrado en el widget.
+        val ox = (anchoDp - vista.caja.width() * escala) / 2 - vista.caja.left * escala
+        val oy = (altoDp - vista.caja.height() * escala) / 2 - vista.caja.top * escala
+        elegidas.sortedBy { it.orden }.forEach { p ->
+            val ctr = vista.centros.getValue(p.id)
+            dibujar(p, (ox + ctr.x * escala) * d, (oy + ctr.y * escala) * d, rlado * escala * d)
         }
         return bmp
+    }
+
+    private class Vista(val caja: RectF, val escala: Float, val centros: Map<String, PointF>)
+
+    /** El rectángulo del tablero de referencia que ocupan las piezas y la escala para que quepa en ancho×alto. */
+    private fun encuadrar(piezas: List<Pieza>, rw: Float, rh: Float, rlado: Float, ancho: Float, alto: Float): Vista {
+        val centros = piezas.associate { it.id to centro(it, rw, rh, rlado, 1f) }
+        val caja = RectF(Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE)
+        piezas.forEach { p ->
+            val ctr = centros.getValue(p.id)
+            val m = medida(p, rlado)
+            // Con el giro, las esquinas asoman un poco más que la mitad.
+            val mx = m.width * 0.56f; val my = m.height * 0.56f
+            caja.union(ctr.x - mx, ctr.y - my, ctr.x + mx, ctr.y + my)
+        }
+        val escala = min(ancho / caja.width(), alto / caja.height())
+            .coerceAtMost(LADO_MAXIMO_WIDGET / rlado)
+        return Vista(caja, escala, centros)
     }
 
     /** Para TalkBack: qué hay en el tablero. */
