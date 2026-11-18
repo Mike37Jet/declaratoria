@@ -15,6 +15,11 @@
     <color name="margen">#E58A8A</color>
     <color name="tinta_azul">#1F4E9C</color>
     <color name="tinta_rosa">#C2185B</color>
+    <!-- Las demás tintas que se pueden elegir (oscuras, para leerse sobre la hoja crema). -->
+    <color name="tinta_verde">#2E6B3F</color>
+    <color name="tinta_violeta">#5E3A8C</color>
+    <color name="tinta_turquesa">#00727A</color>
+    <color name="tinta_negra">#26262E</color>
     <color name="tinta_lapiz">#3A3530</color>
     <color name="tinta_suave">#6E655A</color>
     <color name="tinta_guia">#9C9384</color>

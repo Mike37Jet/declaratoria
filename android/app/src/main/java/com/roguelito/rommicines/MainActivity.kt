@@ -401,7 +401,8 @@ class MainActivity : Activity() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(0, (3 * resources.displayMetrics.density).toInt(), 0, 0)
-                val quien = if (p.tinta == com.roguelito.rommicines.libreta.Tinta.ROSA) Toques.MIMINA else Toques.ROGUELITO
+                val yo = Toques.yo(this@MainActivity)
+                val quien = if (p.mio) yo ?: Toques.ROGUELITO else Toques.otro(yo)
                 addView(TextView(context).apply {
                     text = p.texto
                     setTextColor(getColor(R.color.cream)); textSize = 15f

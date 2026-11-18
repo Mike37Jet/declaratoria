@@ -55,6 +55,10 @@ class LibretaActivity : Activity() {
 
     /** Lo último que llegó de Firestore, para numerar el boleto y saber qué planes ya tienen foto. */
     private var ultimosPlanes: List<Plan> = emptyList()
+    /** Los planes tal como llegan de Firestore, antes de ponerles la tinta actual de cada uno. */
+    private var crudos: List<Plan> = emptyList()
+    /** Vuelve a entintar el renglón nuevo (campo y lapicero) con otra tinta. */
+    private var ponerTinta: ((Tinta) -> Unit)? = null
     private var conRecuerdo: Set<String> = emptySet()
 
     // La hoja de «¡Lo hicieron!» que pide la foto, si está abierta.
@@ -213,7 +217,7 @@ class LibretaActivity : Activity() {
                 pie = "En cuanto $otro lo escriba en su celular, la libreta será de los dos.",
             )
             escuchaMiembros?.remove()
-            escuchaMiembros = Libreta.escucharMiembros(Libreta.pareja(this)!!) { n ->
+            escuchaMiembros = Libreta.escucharMiembros(this, Libreta.pareja(this)!!) { n ->
                 if (n >= 2 && tapa == null) { mostrar(); escuchar() }
             }
         }, fallo = ::mensaje)
@@ -351,6 +355,8 @@ class LibretaActivity : Activity() {
         fun ponerLetra(l: Lapicero) { campo.typeface = if (l.negrita) Papel.letraNegrita(this) else Papel.letra(this) }
         ponerLetra(lapicero.lapicero)
         lapicero.alCambiar = ::ponerLetra
+        lapicero.alPedirTinta = ::elegirTinta
+        ponerTinta = { t -> getColor(t.color).let { campo.setTextColor(it); lapicero.tinta = it } }
         clip.alCambiar = { puesto -> campo.hint = if (puesto) "+ proponer un plan…" else "+ escribir un plan…" }
         campo.setOnEditorActionListener { _, accion, _ ->
             if (accion != EditorInfo.IME_ACTION_DONE) return@setOnEditorActionListener false
@@ -395,17 +401,23 @@ class LibretaActivity : Activity() {
         val pareja = Libreta.pareja(this) ?: return
         if (planes == null) return
         escuchaPlanes?.remove()
-        escuchaPlanes = Libreta.escucharPlanes(pareja, ::pintar) { mensaje(it) }
+        escuchaPlanes = Libreta.escucharPlanes(pareja, { crudos = it; pintar(Libreta.conTintas(this, it)) }) { mensaje(it) }
         escuchaMiembros?.remove()
         escuchaRecuerdos?.remove()
         escuchaRecuerdos = Album.escuchar(pareja) { lista -> conRecuerdo = lista.map { it.id }.toSet() }
         escuchaManchas?.remove()
         escuchaManchas = Libreta.escucharManchas(pareja) { limpias -> hojaPapel?.limpias = limpias }
-        escuchaMiembros = Libreta.escucharMiembros(pareja) { n ->
+        escuchaMiembros = Libreta.escucharMiembros(this, pareja, alCambiarTintas = ::alCambiarTintas) { n ->
             val codigo = Libreta.codigo(this)
             if (n < 2 && codigo != null) mensaje("Falta ${Toques.otro(Toques.yo(this))}: su código es ${Codigos.mostrar(codigo)}", error = false)
             else if (estado?.text?.startsWith("Falta") == true) mensaje("")
         }
+    }
+
+    /** Cambió una tinta (la tuya o la del otro): se repintan los planes, el renglón nuevo y el widget. */
+    private fun alCambiarTintas() {
+        ponerTinta?.invoke(Libreta.tinta(this))
+        if (planes != null) pintar(Libreta.conTintas(this, crudos))
     }
 
     private fun pintar(lista: List<Plan>) {
@@ -700,6 +712,67 @@ class LibretaActivity : Activity() {
         })
         tarjeta.addView(boton(si, siIcono) { cerrarCapa(); accion() })
         tarjeta.addView(letra(no, 19f, R.color.tinta_suave, negrita = true).apply {
+            paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            gravity = Gravity.CENTER
+            minHeight = dp(48)
+            isClickable = true
+            setOnClickListener { cerrarCapa() }
+        })
+        mostrarCapa(tarjeta)
+    }
+
+    /**
+     * La notita de las tintas: un manchón de cada una con su nombre escrito en ella. La del otro
+     * sale ocupada y no se puede tomar, para que nunca escriban los dos del mismo color.
+     */
+    private fun elegirTinta() {
+        if (capa != null) return
+        val mia = Libreta.tinta(this)
+        val ocupada = Libreta.tintaOcupada(this)
+        val otro = Toques.otro(Toques.yo(this))
+        val tarjeta = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = HojaDrawable(this@LibretaActivity)
+            elevation = dp(10).toFloat()
+            setPadding(margen + dp(4), linea.toInt(), dp(20), dp(14))
+            rotation = -1f
+            isClickable = true
+        }
+        tarjeta.addView(letra("Tu tinta", 28f, R.color.tinta_lapiz, negrita = true).apply {
+            text = conIcono("Tu tinta", trazo(R.drawable.ic_libreta_tinta, getColor(R.color.tinta_lapiz), Papel.sp(this@LibretaActivity, 26f)), alFinal = true)
+        })
+        tarjeta.addView(letra("Con ella se ven tus planes en los dos celulares. La de $otro es solo suya.", 19f, R.color.tinta_suave).apply {
+            (layoutParams as ViewGroup.MarginLayoutParams).apply { topMargin = dp(4); bottomMargin = dp(6) }
+        })
+        Tinta.entries.forEach { t ->
+            val tomada = t == ocupada
+            val color = getColor(t.color)
+            tarjeta.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = dp(48)
+                addView(ManchonTinta(this@LibretaActivity, color, elegida = t == mia), LinearLayout.LayoutParams(dp(34), dp(34)).apply { rightMargin = dp(13) })
+                addView(letra(t.nombre, 23f, t.color, negrita = t == mia).apply {
+                    if (tomada) text = "${t.nombre} · es la de $otro"
+                    if (t == mia) text = "${t.nombre} · la tuya"
+                }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                if (tomada) {
+                    alpha = 0.38f
+                    contentDescription = "${t.nombre}, es la tinta de $otro"
+                } else {
+                    isClickable = true
+                    contentDescription = t.nombre + if (t == mia) ", elegida" else ""
+                    setOnClickListener {
+                        if (t != mia && Libreta.elegirTinta(this@LibretaActivity, t)) {
+                            performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                            alCambiarTintas() // también reescribe la copia del widget
+                        }
+                        cerrarCapa()
+                    }
+                }
+            })
+        }
+        tarjeta.addView(letra("Dejarla así", 19f, R.color.tinta_suave, negrita = true).apply {
             paintFlags = paintFlags or Paint.UNDERLINE_TEXT_FLAG
             gravity = Gravity.CENTER
             minHeight = dp(48)

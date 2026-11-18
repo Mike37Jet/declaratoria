@@ -278,7 +278,7 @@ class PlanView(context: Context, plan: Plan) : View(context) {
         }
         val nombre = plan.firma
         if (firmado > 0f && !nombre.isNullOrBlank()) {
-            letraFirma.color = context.getColor(plan.tinta.otra().color)
+            letraFirma.color = context.getColor((plan.tintaFirma ?: plan.tinta.otra()).color)
             val ancho = letraFirma.measureText(nombre)
             val sola = width - derecha - ancho - Papel.dp(context, 4f)
             // Al caer el sello, la firma se corre a su izquierda (si cabe después del texto).

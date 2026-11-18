@@ -62,7 +62,11 @@ object DibujoLapicero {
 
 /** El lapicero con que escribes, al final del renglón. Al tocarlo se abre el estuche. */
 @SuppressLint("ViewConstructor")
-class BotonLapicero(context: Context, private val tinta: Int) : View(context) {
+class BotonLapicero(context: Context, tinta: Int) : View(context) {
+    var tinta = tinta
+        set(v) { field = v; invalidate() }
+    /** Al tocar «Cambiar la tinta» en el estuche (la libreta abre su notita). */
+    var alPedirTinta: (() -> Unit)? = null
     var lapicero = Libreta.lapicero(context)
         set(v) { field = v; contentDescription = "Lapicero: ${v.nombre}. Cambiar"; invalidate() }
     var alCambiar: ((Lapicero) -> Unit)? = null
@@ -119,6 +123,30 @@ class BotonLapicero(context: Context, private val tinta: Int) : View(context) {
                 }
             })
         }
+        // Debajo de los lapiceros, la tinta: se elige aparte, en una notita.
+        alPedirTinta?.let { pedir ->
+            caja.addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = (48 * d).toInt()
+                isClickable = true
+                contentDescription = "Cambiar la tinta"
+                addView(android.widget.ImageView(context).apply {
+                    setImageResource(R.drawable.ic_libreta_tinta)
+                    setColorFilter(tinta)
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                    setPadding((10 * d).toInt(), (10 * d).toInt(), (10 * d).toInt(), (10 * d).toInt())
+                }, LinearLayout.LayoutParams((44 * d).toInt(), (44 * d).toInt()))
+                addView(TextView(context).apply {
+                    text = "Cambiar la tinta"
+                    typeface = Papel.letra(context)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 21f)
+                    setTextColor(tinta)
+                    setPadding((6 * d).toInt(), 0, 0, 0)
+                })
+                setOnClickListener { ventana.dismiss(); pedir() }
+            })
+        }
         caja.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         // Se abre encima del lapicero, alineado a su derecha, como un estuche que se despliega.
         ventana.showAsDropDown(this, width - caja.measuredWidth, -height - caja.measuredHeight)
@@ -171,5 +199,25 @@ class BotonClip(context: Context) : View(context) {
         canvas.translate(cx - 6 * d, cy - 16 * d - if (puesto) 4 * d else 0f)
         canvas.drawPath(clip, alambre)
         canvas.restore()
+    }
+}
+
+/** Un manchón de tinta, como la gota que queda al probar la pluma; la elegida lleva un aro a lápiz. */
+@SuppressLint("ViewConstructor")
+class ManchonTinta(context: Context, private val tinta: Int, private val elegida: Boolean) : View(context) {
+    private val d = resources.displayMetrics.density
+    private val mancha = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = tinta }
+    private val aro = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE; strokeWidth = 1.6f * d; color = context.getColor(R.color.tinta_lapiz)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val cx = width / 2f; val cy = height / 2f
+        val r = minOf(width, height) / 2f - 4 * d
+        // Algo irregular: tres gotas encimadas, no un círculo perfecto.
+        canvas.drawCircle(cx, cy, r * 0.78f, mancha)
+        canvas.drawCircle(cx + r * 0.28f, cy - r * 0.2f, r * 0.55f, mancha)
+        canvas.drawCircle(cx - r * 0.3f, cy + r * 0.26f, r * 0.42f, mancha)
+        if (elegida) canvas.drawCircle(cx, cy, r + 2.5f * d, aro)
     }
 }

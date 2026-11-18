@@ -174,7 +174,7 @@ class RecuerdoView(context: Context) : View(context) {
         }
         // La línea, con la tinta de quien la pegó.
         if (r.linea.isNotBlank()) {
-            letraLinea.color = context.getColor(r.tinta.color)
+            letraLinea.color = context.getColor((Libreta.tintaDe(context, r.autor) ?: r.tinta).color)
             val capa = StaticLayout.Builder.obtain(r.linea, 0, r.linea.length, letraLinea, ladoFoto.toInt())
                 .setAlignment(Layout.Alignment.ALIGN_CENTER).setMaxLines(2).setEllipsize(TextUtils.TruncateAt.END)
                 .setIncludePad(false).build()

@@ -50,7 +50,7 @@ es el orden en que se tachó (`Album.numeroDeBoleto`).
 
 Etapa 3 de la libreta: una **propuesta** (clip en el renglón nuevo, `Estuche.kt`) lleva clip y «firma:» hasta
 que el otro la firma; mientras, no se puede tachar. Cada uno elige **lapicero** (bolígrafo, plumón, pluma; se
-guarda en las prefs «libreta»). Las **manchas de café** salen al llevar 3, 10 y 20 planes hechos (`Libreta.manchas`)
+guarda en las prefs «libreta»). Cada uno elige también su **tinta** (6, `Tinta` en `Libreta.kt`, notita «Tu tinta» desde el estuche): va en `parejas/{p}.tintas` (uid → tinta) y los planes se pintan con la tinta *actual* de su autor (`Libreta.conTintas`), así que cambiarla recolorea los suyos en los dos celulares; la del otro no se puede elegir. Las **manchas de café** salen al llevar 3, 10 y 20 planes hechos (`Libreta.manchas`)
 y se limpian frotando de lado a lado (`PaginaView`); las limpias quedan en `parejas/{p}/hoja/manchas`.
 Las preguntas dentro de la libreta van en una notita de papel (`nota()`), no en `AlertDialog`.
 En la libreta **no se usan emojis**: los íconos son de trazo, de Phosphor Icons (light, MIT) pasados a

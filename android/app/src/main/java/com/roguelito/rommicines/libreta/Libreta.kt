@@ -27,6 +27,8 @@ data class Plan(
     val firmadaPor: String? = null,
     val firma: String? = null, // el nombre con que se firmó
     val lapicero: Lapicero = Lapicero.BOLIGRAFO,
+    /** La tinta de quien firmó (null: se toma la otra de [tinta]). */
+    val tintaFirma: Tinta? = null,
 ) {
     val porFirmar get() = propuesta && firmadaPor == null
 }
@@ -44,13 +46,24 @@ enum class Lapicero(val nombre: String, val grosor: Float, val negrita: Boolean)
     }
 }
 
-/** Cada uno escribe con su tinta: así se nota quién escribió qué sin poner nombres. */
-enum class Tinta(val color: Int) {
-    AZUL(R.color.tinta_azul),
-    ROSA(R.color.tinta_rosa);
+/**
+ * Cada uno escribe con su tinta: así se nota quién escribió qué sin poner nombres.
+ * Se elige en el estuche; mientras no se elija, Mimina escribe en rosa y Roguelito en azul.
+ */
+enum class Tinta(val color: Int, val nombre: String) {
+    AZUL(R.color.tinta_azul, "Azul"),
+    ROSA(R.color.tinta_rosa, "Rosa"),
+    VERDE(R.color.tinta_verde, "Verde botella"),
+    VIOLETA(R.color.tinta_violeta, "Violeta"),
+    TURQUESA(R.color.tinta_turquesa, "Turquesa"),
+    NEGRA(R.color.tinta_negra, "Negra");
+
+    /** Como se guarda en Firestore y en las copias locales ("azul", "rosa", …). */
+    val codigo get() = name.lowercase()
 
     companion object {
-        fun de(nombre: String?): Tinta = if (nombre == "rosa") ROSA else AZUL
+        fun de(codigo: String?): Tinta = deCodigo(codigo) ?: AZUL
+        fun deCodigo(codigo: String?): Tinta? = entries.firstOrNull { it.codigo == codigo }
         fun dePersona(nombre: String?): Tinta = if (nombre == Toques.MIMINA) ROSA else AZUL
     }
 
@@ -77,7 +90,7 @@ object Codigos {
 
 /**
  * La libreta compartida, guardada en Firestore (ver android/firestore.rules):
- *   parejas/{id}            miembros, nombres, tintas
+ *   parejas/{id}            miembros, nombres, tintas (uid → tinta elegida; manda sobre la de cada plan)
  *   parejas/{id}/planes/{p} texto, autor, tinta, orden, hecho, hechoPor
  *   codigos/{codigo}        pareja, creador (se borra al usarlo)
  *
@@ -97,7 +110,71 @@ object Libreta {
 
     /** El nombre de quien usa este celular (se elige en la pantalla principal). */
     fun nombre(context: Context): String? = Toques.yo(context)
-    fun tinta(context: Context): Tinta = Tinta.dePersona(nombre(context))
+    /** Tu tinta: la que elegiste en el estuche o, si nunca elegiste, la de tu nombre. */
+    fun tinta(context: Context): Tinta =
+        Tinta.deCodigo(prefs(context).getString("tinta", null)) ?: Tinta.dePersona(nombre(context))
+
+    /**
+     * Cambia tu tinta: en este celular al momento y en el otro por el documento de la pareja.
+     * La del otro no se puede tomar (así siempre se sabe quién escribió qué): devuelve false.
+     */
+    fun elegirTinta(context: Context, t: Tinta): Boolean {
+        if (t == tintaOcupada(context)) return false
+        prefs(context).edit().putString("tinta", t.codigo).apply()
+        val pareja = pareja(context) ?: return true
+        val uid = yo() ?: return true
+        guardarTintas(context, tintas(context) + (uid to t))
+        db.collection("parejas").document(pareja).update("tintas.$uid", t.codigo)
+        return true
+    }
+
+    /** La tinta que ya es del otro (null si todavía no hay otro). */
+    fun tintaOcupada(context: Context): Tinta? {
+        val yo = yo()
+        return tintas(context).entries.firstOrNull { it.key != yo }?.value
+    }
+
+    /** Si los dos quedaron con la misma (la eligieron a la vez sin conexión), cede uno solo: el de uid mayor. */
+    internal fun cede(yo: String, otro: String) = yo > otro
+
+    /** La tinta a la que se pasa quien cede: la de su nombre, o la primera libre. */
+    internal fun libre(preferida: Tinta, ocupada: Tinta): Tinta =
+        if (preferida != ocupada) preferida else Tinta.entries.first { it != ocupada }
+
+    /**
+     * Las tintas de la pareja (uid → tinta), copiadas de parejas/{p}.tintas. Los planes se pintan con
+     * la tinta actual de quien los escribió, no con la que tenían al escribirse: si alguien cambia de
+     * tinta, cambian todos sus planes en los dos celulares.
+     */
+    fun tintas(context: Context): Map<String, Tinta> = runCatching {
+        val o = org.json.JSONObject(prefs(context).getString("tintas", "{}")!!)
+        o.keys().asSequence().mapNotNull { k -> Tinta.deCodigo(o.optString(k))?.let { k to it } }.toMap()
+    }.getOrDefault(emptyMap())
+
+    private fun guardarTintas(context: Context, mapa: Map<String, Tinta>): Boolean {
+        val json = org.json.JSONObject(mapa.mapValues { it.value.codigo }).toString()
+        if (prefs(context).getString("tintas", null) == json) return false
+        prefs(context).edit().putString("tintas", json).apply()
+        return true
+    }
+
+    /** La tinta con que se pinta lo que escribió [uid] (la tuya, si eres tú). */
+    fun tintaDe(context: Context, uid: String?): Tinta? = when {
+        uid.isNullOrEmpty() -> null
+        uid == yo() -> tinta(context)
+        else -> tintas(context)[uid]
+    }
+
+    /** La tinta del otro (para lo que llega por aviso, que no trae el uid). */
+    fun tintaDelOtro(context: Context): Tinta {
+        val yo = yo()
+        return tintas(context).entries.firstOrNull { it.key != yo }?.value ?: tinta(context).otra()
+    }
+
+    /** Los planes con la tinta actual de quien los escribió y de quien los firmó. */
+    fun conTintas(context: Context, planes: List<Plan>): List<Plan> = planes.map { p ->
+        p.copy(tinta = tintaDe(context, p.autor) ?: p.tinta, tintaFirma = tintaDe(context, p.firmadaPor))
+    }
 
     /** Cuántas manchas de café tiene ya la hoja: la libreta se va usando. */
     fun manchas(hechos: Int) = listOf(3, 10, 20).count { hechos >= it }
@@ -128,7 +205,7 @@ object Libreta {
             .set(pareja, mapOf(
                 "miembros" to listOf(uid),
                 "nombres" to mapOf(uid to (nombre(context) ?: "")),
-                "tintas" to mapOf(uid to tinta(context).name.lowercase()),
+                "tintas" to mapOf(uid to tinta(context).codigo),
                 "creada" to FieldValue.serverTimestamp(),
             ))
             .set(db.collection("codigos").document(codigo), mapOf(
@@ -153,7 +230,7 @@ object Libreta {
                 db.collection("parejas").document(pareja).update(mapOf(
                     "miembros" to FieldValue.arrayUnion(uid),
                     "nombres.$uid" to (nombre(context) ?: ""),
-                    "tintas.$uid" to tinta(context).name.lowercase(),
+                    "tintas.$uid" to tinta(context).codigo,
                 ))
                     .addOnSuccessListener {
                         prefs(context).edit().putString("pareja", pareja).remove("codigo").apply()
@@ -166,11 +243,33 @@ object Libreta {
             .addOnFailureListener { fallo(motivo(it)) }
     }, fallo)
 
-    /** Avisa cuántos miembros tiene la libreta (para dejar de mostrar el código cuando ya son dos). */
-    fun escucharMiembros(pareja: String, cambio: (Int) -> Unit): ListenerRegistration =
-        db.collection("parejas").document(pareja).addSnapshotListener { doc, _ ->
-            (doc?.get("miembros") as? List<*>)?.let { cambio(it.size) }
+    /**
+     * Avisa cuántos miembros tiene la libreta (para dejar de mostrar el código cuando ya son dos)
+     * y guarda las tintas de la pareja; [alCambiarTintas] se llama cuando alguna cambió.
+     */
+    fun escucharMiembros(context: Context, pareja: String, alCambiarTintas: () -> Unit = {}, cambio: (Int) -> Unit): ListenerRegistration {
+        val app = context.applicationContext
+        return db.collection("parejas").document(pareja).addSnapshotListener { doc, _ ->
+            if (doc == null || !doc.exists()) return@addSnapshotListener
+            (doc.get("miembros") as? List<*>)?.let { cambio(it.size) }
+            val mapa = (doc.get("tintas") as? Map<*, *>).orEmpty().mapNotNull { (k, v) ->
+                val t = Tinta.deCodigo(v as? String) ?: return@mapNotNull null
+                (k as? String ?: return@mapNotNull null) to t
+            }.toMap()
+            // Si tu tinta allá no es la de aquí (la elegiste sin conexión o antes de unirte), se corrige.
+            val uid = yo()
+            var mia = tinta(app)
+            val otro = mapa.entries.firstOrNull { it.key != uid }
+            if (uid != null && otro != null && otro.value == mia && cede(uid, otro.key)) {
+                mia = libre(Tinta.dePersona(nombre(app)), otro.value)
+                prefs(app).edit().putString("tinta", mia.codigo).apply()
+            }
+            if (uid != null && !doc.metadata.hasPendingWrites() && mapa[uid] != mia) {
+                doc.reference.update("tintas.$uid", mia.codigo)
+            }
+            if (guardarTintas(app, if (uid != null) mapa + (uid to mia) else mapa)) alCambiarTintas()
         }
+    }
 
     fun escucharPlanes(pareja: String, cambio: (List<Plan>) -> Unit, fallo: (String) -> Unit): ListenerRegistration =
         db.collection("parejas").document(pareja).collection("planes")
@@ -215,7 +314,7 @@ object Libreta {
         doc.set(mapOf(
             "texto" to limpio,
             "autor" to (yo() ?: ""),
-            "tinta" to tinta(context).name.lowercase(),
+            "tinta" to tinta(context).codigo,
             "lapicero" to lapicero(context).codigo,
             "propuesta" to propuesta,
             "orden" to System.currentTimeMillis(),

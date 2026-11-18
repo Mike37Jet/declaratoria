@@ -96,7 +96,7 @@ class LibretaWidget : AppWidgetProvider() {
                 Evento.PLAN, Evento.PROPUESTA ->
                     if (h.pendientes.any { it.id == aviso.plan }) h
                     else h.copy(pendientes = h.pendientes + Pendiente(aviso.plan, aviso.texto,
-                        Tinta.dePersona(aviso.quien), aviso.evento == Evento.PROPUESTA, mio = false))
+                        Libreta.tintaDelOtro(context), aviso.evento == Evento.PROPUESTA, mio = false))
                 Evento.FIRMA -> h.copy(pendientes = h.pendientes.map { if (it.id == aviso.plan) it.copy(porFirmar = false) else it })
                 Evento.HECHO ->
                     if (h.pendientes.none { it.id == aviso.plan }) h
@@ -131,7 +131,7 @@ class LibretaWidget : AppWidgetProvider() {
             val a = JSONArray()
             h.pendientes.take(GUARDADOS).forEach {
                 a.put(JSONObject().put("id", it.id).put("texto", it.texto)
-                    .put("tinta", if (it.tinta == Tinta.ROSA) "rosa" else "azul")
+                    .put("tinta", it.tinta.codigo)
                     .put("porFirmar", it.porFirmar).put("mio", it.mio))
             }
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

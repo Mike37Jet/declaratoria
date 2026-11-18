@@ -72,7 +72,7 @@ object Album {
             "plan" to plan.texto,
             "linea" to linea.trim().take(MAX_LINEA),
             "autor" to (Libreta.yo() ?: ""),
-            "tinta" to Libreta.tinta(context).name.lowercase(),
+            "tinta" to Libreta.tinta(context).codigo,
             "fecha" to (plan.hecho ?: System.currentTimeMillis()),
             "numero" to numero,
             "foto" to Blob.fromBytes(foto),

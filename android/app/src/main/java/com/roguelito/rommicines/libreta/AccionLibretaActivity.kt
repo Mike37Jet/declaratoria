@@ -49,7 +49,7 @@ class AccionLibretaActivity : Activity() {
 
         fun relleno(accion: String, p: LibretaWidget.Pendiente): Intent = Intent()
             .putExtra(ACCION, accion).putExtra(PLAN, p.id).putExtra(TEXTO, p.texto)
-            .putExtra(TINTA, if (p.tinta == Tinta.ROSA) "rosa" else "azul")
+            .putExtra(TINTA, p.tinta.codigo)
 
         /** Abrir la libreta directamente (el «+» y la cabecera del widget). */
         fun abrirLibreta(context: Context, accion: String?, plan: String?): PendingIntent =
